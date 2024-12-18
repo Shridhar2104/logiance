@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "/pb";
+// The Payment service definition.
+service PaymentService {
+    // Recharges the wallet for a user.
+    rpc RechargeWallet(RechargeRequest) returns (RechargeResponse);
+
+    // Deducts an amount from the wallet for shipping an order.
+    rpc DeductBalance(DeductionRequest) returns (DeductionResponse);
+
+    // Processes COD remittance for orders marked as delivered after 15 days.
+    rpc ProcessRemittance(RemittanceRequest) returns (RemittanceResponse);
+
+    // Retrieves the wallet balance and transaction history.
+    rpc GetWalletDetails(WalletDetailsRequest) returns (WalletDetailsResponse);
+}
+
+// Request to recharge the wallet.
+message RechargeRequest {
+    string user_id = 1; // The ID of the user.
+    double amount = 2;  // The amount to recharge.
+}
+
+// Response for wallet recharge.
+message RechargeResponse {
+    bool success = 1;    // Indicates if the recharge was successful.
+    string message = 2;  // Additional message (e.g., "Recharge successful").
+    double new_balance = 3; // Updated wallet balance.
+}
+
+// Request to deduct balance for shipping.
+message DeductionRequest {
+    string user_id = 1;    // The ID of the user.
+    double amount = 2;     // The amount to deduct.
+    string order_id = 3;   // The associated order ID.
+}
+
+// Response for balance deduction.
+message DeductionResponse {
+    bool success = 1;    // Indicates if the deduction was successful.
+    string message = 2;  // Additional message (e.g., "Deduction successful").
+    double new_balance = 3; // Updated wallet balance.
+}
+
+// Request to process COD remittance.
+message RemittanceRequest {
+    string user_id = 1;    // The ID of the user.
+    repeated string order_ids = 2; // List of order IDs eligible for remittance.
+}
+
+// Response for COD remittance processing.
+message RemittanceResponse {
+    bool success = 1;       // Indicates if the remittance was successful.
+    string message = 2;     // Additional message (e.g., "Remittance processed").
+    repeated RemittanceDetail details = 3; // Details of remittance processing.
+}
+
+// Details for each remittance processed.
+message RemittanceDetail {
+    string order_id = 1;   // The associated order ID.
+    double amount = 2;     // Amount remitted for this order.
+    bool processed = 3;    // Whether the remittance was successful for this order.
+}
+
+// Request to retrieve wallet details.
+message WalletDetailsRequest {
+    string user_id = 1; // The ID of the user.
+}
+
+// Response with wallet details and transaction history.
+message WalletDetailsResponse {
+    double balance = 1;                       // Current wallet balance.
+    repeated Transaction transaction_history = 2; // List of past transactions.
+}
+
+// Transaction history details.
+message Transaction {
+    string transaction_id = 1;     // Unique ID for the transaction.
+    string transaction_type = 2;   // Type of transaction (e.g., "recharge", "deduction", "remittance").
+    double amount = 3;             // Amount of the transaction.
+    string order_id = 4;           // Associated order ID, if applicable.
+    string timestamp = 5;          // Timestamp of the transaction.
+}

@@ -1,0 +1,75 @@
+scalar DateTime
+
+type Account {
+	id: String!
+	name: String!
+    email: String!
+    password: String!
+   
+}
+
+type OrderLineItem {
+	id: String!
+	amount: Float!
+    description: String!
+}
+
+type Order {
+	id: String!
+	amount: Float!
+    accountId: String!
+	createdAt: DateTime!
+    description: String!
+    lineItems: [OrderLineItem!]!
+}
+
+
+
+input PaginationInput {
+    skip: Int!
+    take: Int!
+}
+
+
+
+input AccountInput {
+    name: String!
+    password: String!
+    email: String!
+}
+
+input OrderLineItemInput {
+    id: String!
+    amount: Float!
+    description: String!
+}
+
+input OrderInput {
+    accountId: String!
+    lineItems: [OrderLineItemInput!]!
+}
+
+input StoreIntegrationInput{
+    shopName: String!
+    accountId: String!
+}
+
+input SyncOrdersInput{
+    accountId: String!
+    shopName: String!
+}
+
+type Mutation {
+    createAccount(Account: AccountInput!): Account!
+    integrateShop(shopName: String!): String!
+}
+
+type Query {
+    accounts(pagination: PaginationInput!): [Account!]!
+} 
+
+type Accounts {
+    orders(pagination: PaginationInput!): [Order!]!
+    
+    syncorders(syncorders: SyncOrdersInput!): Boolean!
+}

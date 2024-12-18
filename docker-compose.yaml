@@ -1,0 +1,87 @@
+services:
+  shopify-db:
+    build: 
+      context: .
+      dockerfile: ./shopify/db.dockerfile
+    environment:
+      DATABASE_URL: postgres://shopify_user_dev:shopify_password_dev@shopify-db:5432/shopify_db_dev?sslmode=disable
+      POSTGRES_USER: shopify_user_dev
+      POSTGRES_PASSWORD: shopify_password_dev
+      POSTGRES_DB: shopify_db_dev
+    volumes:
+      - shopify_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    env_file:
+      - .env.development 
+    restart: always
+
+  shopify-service:
+    build:
+      context: .  # Path to your service's Go code
+      dockerfile: ./shopify/app.dockerfile
+    
+    depends_on:
+      - shopify-db  # Ensure the DB is up before starting the service
+    networks:
+      - logilo-network
+    ports:
+      - "8080:8080"  # Adjust if your service runs on different ports
+    env_file:
+      - .env.development 
+
+  graphql-service:
+    build:
+      context: .  # Path to your service's Go code
+      dockerfile: ./graphql/app.dockerfile
+    environment:
+      - ACCOUNT_URL=account-service:8081
+      - SHOPIFY_URL=shopify-service:8080
+    networks:
+      - logilo-network
+    ports:
+      - "8084:8084"  # Adjust if your service runs on different ports
+    env_file:
+      - .env.development 
+    restart: on-failure
+    depends_on:
+      - shopify-service
+      - account-service
+
+  account-db:
+    build: 
+      context: .
+      dockerfile: ./account/db.dockerfile
+    environment:
+      DATABASE_URL: postgres://account_user_dev:account_password_dev@account-db:5432/account_db_dev?sslmode=disable
+      POSTGRES_USER: account_user_dev
+      POSTGRES_PASSWORD: account_password_dev
+      POSTGRES_DB: account_db_dev
+    volumes:
+      - account_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    env_file:
+      - .env.development 
+    restart: always
+
+  account-service:
+    build:
+      context: .  # Path to your service's Go code
+      dockerfile: ./account/app.dockerfile
+    depends_on:
+      - account-db  # Ensure the DB is up before starting the service
+    networks:
+      - logilo-network
+    ports:
+      - "8081:8081"  # Adjust if your service runs on different ports
+    env_file:
+      - .env.development 
+
+
+volumes:
+  shopify_postgres_data:
+  account_postgres_data:
+networks:
+  logilo-network:
+    driver: bridge

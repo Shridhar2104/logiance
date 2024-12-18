@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+service ShopifyService {
+    rpc GetAuthorizationURL(GetAuthorizationURLRequest) returns (GetAuthorizationURLResponse) {};
+    rpc ExchangeAccessToken(ExchangeAccessTokenRequest) returns (ExchangeAccessTokenResponse) {};
+    rpc GetOrdersForShopAndAccount(GetOrdersForShopAndAccountRequest) returns (GetOrdersForShopAndAccountResponse);
+}
+message Order {
+    string id = 1;                   // Unique internal identifier of the order
+    string account_id = 2;           // Associated account ID
+    string shop_id = 3;              // Shopify shop ID
+    float total_price = 4;           // Total order price
+    string order_id = 5;             // Shopify's native order ID
+}
+
+message GetAuthorizationURLRequest {
+    string shop_name = 1;
+    string state = 2;
+}
+
+message GetAuthorizationURLResponse {
+    string auth_url = 1;
+}
+
+message ExchangeAccessTokenRequest {
+    string shop_name = 1;
+    string code = 2;
+    string account_id= 3;
+}
+
+message ExchangeAccessTokenResponse {
+    bool success = 1;
+}
+
+message GetOrdersForShopAndAccountRequest{
+    string shop_name = 1;
+    string account_id = 2;
+    string token =3;
+
+}
+
+message GetOrdersForShopAndAccountResponse{
+    repeated Order orders = 1;
+
+}
