@@ -48,5 +48,5 @@ func (s *ShopifyService) ExchangeAccessToken(ctx context.Context, shop, code , a
 		return err
 	}
 	// Save to database
-	return s.Repo.SaveShopCredentials(ctx, shop, accessToken, accountId)
+	return s.Repo.SaveShopCredentials(ctx, shop,accountId, accessToken)
 }
