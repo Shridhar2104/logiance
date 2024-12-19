@@ -36,7 +36,7 @@ services:
       dockerfile: ./graphql/app.dockerfile
     environment:
       - ACCOUNT_URL=account-service:8081
-      - SHOPFY_URL=shopify-service:8080
+      - SHOPIFY_URL=shopify-service:8080
     networks:
       - logilo-network
     ports:
