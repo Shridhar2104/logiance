@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"time"
-	"os"
 
 	"github.com/Shridhar2104/logilo/shopify"
 
@@ -34,10 +33,10 @@ func main() {
 		return nil
 	})
 	defer r.Close()
-	log.Println("server starting on port 8080 ...")
-	ApiKey:=      os.Getenv("SHOPIFY_API_KEY")
-    ApiSecret:=   os.Getenv("SHOPIFY_API_SECRET")
-    RedirectUrl:= os.Getenv("SHOPIFY_REDIRECT_URL")
+	log.Println("server starting on port 8080 ...") 
+	ApiKey:=      "67f10611ac39283d047c7cc4c8e04954"
+    ApiSecret:=   "63e9e494ff13bddd03cb4d742baa10f0"
+    RedirectUrl:= "http://localhost:3000/storeorders"
 
 	s := shopify.NewShopifyService(ApiKey, ApiSecret, RedirectUrl, r)
 	log.Fatal(shopify.NewGRPCServer(s, 8080))
