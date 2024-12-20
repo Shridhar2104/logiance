@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/razorpay/razorpay-go v1.3.2
+	github.com/shopspring/decimal v0.0.0-20200105231215-408a2507e114
 	github.com/vektah/gqlparser/v2 v2.5.20
 	golang.org/x/crypto v0.27.0
 	google.golang.org/grpc v1.68.1
@@ -18,7 +19,6 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/shopspring/decimal v0.0.0-20200105231215-408a2507e114 // indirect
 )
 
 require (

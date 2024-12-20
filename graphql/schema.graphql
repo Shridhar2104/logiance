@@ -28,6 +28,24 @@ type Order {
     lineItems: [OrderLineItem!]!
 }
 
+type ShopSyncStatus {
+    success: Boolean!
+    errorMessage: String
+    ordersCount: Int!
+}
+
+type ShopSyncDetails {
+    shopName: String!
+    status: ShopSyncStatus!
+}
+
+type SyncOrdersResult {
+    overallSuccess: Boolean!
+    message: String
+    shopResults: [ShopSyncDetails!]!
+}
+
+
 
 
 input PaginationInput {
@@ -57,6 +75,8 @@ type Mutation {
     createAccount(Account: AccountInput!): Account!
     integrateShop(shopName: String!): String!
     exchangeAccessToken(shopName: String!, code: String!, accountId: String!): Boolean!
+    syncOrders(accountId: String!): SyncOrdersResult!  
+
 }
 
 type Query {
