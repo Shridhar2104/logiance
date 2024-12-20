@@ -74,4 +74,16 @@ input OrderInput {
 type Mutation {
     createAccount(Account: AccountInput!): Account!
     integrateShop(shopName: String!): String!
-    exchangeA
+    exchangeAccessToken(shopName: String!, code: String!, accountId: String!): Boolean!
+    syncOrders(accountId: String!): SyncOrdersResult!  
+
+}
+
+type Query {
+    getAccountByID(email: String!, password: String!): Account!
+    accounts(pagination: PaginationInput!): [Account!]!
+} 
+
+type Accounts {
+    orders(pagination: PaginationInput!): [Order!]!
+}
