@@ -34,29 +34,26 @@ func (c *Client) Close() {
 
 
 
-// GetOrdersForShopAndAccount fetches orders for a specific shop and account.
-func (c *Client) GetOrdersForShopAndAccount(ctx context.Context, shopName, accountId string) ([]*Order, error) {
-	res, err := c.service.GetOrdersForShopAndAccount(ctx, &pb.GetOrdersForShopAndAccountRequest{
-		ShopName:  shopName,
-		AccountId: accountId,
-	})
-	if err != nil {
-		return nil, err
-	}
+// // GetOrdersForShopAndAccount fetches orders for a specific shop and account.
+// func (c *Client) GetOrdersForShopAndAccount(ctx context.Context, shopName, accountId string) ([]*Order, error) {
+// 	res, err := c.service.GetOrdersForShopAndAccount(ctx, &pb.GetOrdersForShopAndAccountRequest{
+// 		ShopName:  shopName,
+// 		AccountId: accountId,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	orders := make([]*Order, len(res.Orders))
-	for i, o := range res.Orders {
-		orders[i] = &Order{
-			ID:         o.Id,
-			ShopName:   shopName,
-			AccountId:  accountId,
-			TotalPrice: float64(o.TotalPrice),
-			OrderId:    o.OrderId,
-		}
-	}
-	return orders, nil
-}
-//http://djcajdjd?code=jfl&shopname
+// 	orders := make([]*Order, len(res.Orders))
+// 	for i, o := range res.Orders {
+// 		orders[i] = &Order{
+// 			ID:         o.Id,
+// 			TotalPrice: float64(o.TotalPrice),
+// 		}
+// 	}
+// 	return orders, nil
+// }
+// //http://djcajdjd?code=jfl&shopname
 
 // GenerateAuthURL generates an authorization URL for a Shopify store.
 func (c *Client) GenerateAuthURL(ctx context.Context, shopName string) (string, error) {
@@ -86,3 +83,17 @@ func (c *Client) ExchangeAccessToken(ctx context.Context, shopName, code, accoun
 	return nil
 }
 
+
+// client.go
+func (c *Client) SyncOrders(ctx context.Context, accountId string) (map[string]*pb.ShopSyncStatus, error) {
+    req := &pb.SyncOrderRequest{
+        AccountId: accountId,
+    }
+    
+    resp, err := c.service.SyncOrders(ctx, req)
+    if err != nil {
+        return nil, fmt.Errorf("failed to sync orders: %v", err)
+    }
+    
+    return resp.ShopResults, nil
+}

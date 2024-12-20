@@ -57,23 +57,38 @@ func(s *grpcServer) ExchangeAccessToken(ctx context.Context, r *pb.ExchangeAcces
 
 }
 
-func (s *grpcServer) GetOrdersForShopAndAccount(ctx context.Context, r *pb.GetOrdersForShopAndAccountRequest) (*pb.GetOrdersForShopAndAccountResponse, error){
-	orders, err := s.service.GetOrdersForShopAndAccount(ctx, r.ShopName, r.AccountId)
-	if err != nil {
-		return nil, err
-	}
-	ordersPb := make([]*pb.Order, len(orders))
-	for i, order := range orders {
-		ordersPb[i] = &pb.Order{
-			Id: order.ID,
-			AccountId: order.AccountId,
-			ShopId: order.ShopName,
-			TotalPrice: float32(order.TotalPrice),
-			OrderId: order.OrderId,
-		}
-	}
-	return &pb.GetOrdersForShopAndAccountResponse{
-		Orders: ordersPb,
-	}, nil
+// server.go
+func (s *grpcServer) SyncOrders(ctx context.Context, r *pb.SyncOrderRequest) (*pb.SyncOrderResponse, error) {
+    results, err := s.service.SyncOrdersForAccount(ctx, r.AccountId)
+    if err != nil {
+        return &pb.SyncOrderResponse{
+            OverallSuccess: false,
+        }, fmt.Errorf("failed to sync orders: %w", err)
+    }
 
+    return &pb.SyncOrderResponse{
+        OverallSuccess: true,
+        ShopResults: results,
+    }, nil
 }
+
+// func (s *grpcServer) GetOrdersForShopAndAccount(ctx context.Context, r *pb.GetOrdersForShopAndAccountRequest) (*pb.GetOrdersForShopAndAccountResponse, error){
+// 	orders, err := s.service.GetOrdersForShopAndAccount(ctx, r.ShopName, r.AccountId)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ordersPb := make([]*pb.Order, len(orders))
+// 	for i, order := range orders {
+// 		ordersPb[i] = &pb.Order{
+// 			Id: order.ID,
+// 			AccountId: order.AccountId,
+// 			ShopId: order.ShopName,
+// 			TotalPrice: float32(order.TotalPrice),
+// 			OrderId: order.OrderId,
+// 		}
+// 	}
+// 	return &pb.GetOrdersForShopAndAccountResponse{
+// 		Orders: ordersPb,
+// 	}, nil
+
+// }

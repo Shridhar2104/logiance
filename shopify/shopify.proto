@@ -7,7 +7,25 @@ option go_package = "/pb";
 service ShopifyService {
     rpc GetAuthorizationURL(GetAuthorizationURLRequest) returns (GetAuthorizationURLResponse) {};
     rpc ExchangeAccessToken(ExchangeAccessTokenRequest) returns (ExchangeAccessTokenResponse) {};
-    rpc GetOrdersForShopAndAccount(GetOrdersForShopAndAccountRequest) returns (GetOrdersForShopAndAccountResponse);
+    rpc GetOrdersForShopAndAccount(GetOrdersForShopAndAccountRequest) returns (GetOrdersForShopAndAccountResponse) {};
+    rpc SyncOrders(SyncOrderRequest) returns (SyncOrderResponse) {};
+}
+
+// Updated SyncOrder messages for multi-shop support
+message SyncOrderRequest {
+    string account_id = 1;           // Only need account_id as we'll fetch all shops for this account
+}
+
+message ShopSyncStatus {
+    bool success = 1;
+    string error_message = 2;        // Optional error message if sync failed
+    int32 orders_synced = 3;         // Number of orders synced
+}
+
+message SyncOrderResponse {
+    bool overall_success = 1;        // Overall sync operation success
+    map<string, ShopSyncStatus> shop_results = 2;  // Results per shop (shop_name -> status)
+    string message = 3;              // Optional message about the sync operation
 }
 message Order {
     string id = 1;                   // Unique internal identifier of the order
@@ -16,6 +34,10 @@ message Order {
     float total_price = 4;           // Total order price
     string order_id = 5;             // Shopify's native order ID
 }
+
+
+
+
 
 message GetAuthorizationURLRequest {
     string shop_name = 1;

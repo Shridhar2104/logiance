@@ -22,6 +22,7 @@ const (
 	ShopifyService_GetAuthorizationURL_FullMethodName        = "/pb.ShopifyService/GetAuthorizationURL"
 	ShopifyService_ExchangeAccessToken_FullMethodName        = "/pb.ShopifyService/ExchangeAccessToken"
 	ShopifyService_GetOrdersForShopAndAccount_FullMethodName = "/pb.ShopifyService/GetOrdersForShopAndAccount"
+	ShopifyService_SyncOrders_FullMethodName                 = "/pb.ShopifyService/SyncOrders"
 )
 
 // ShopifyServiceClient is the client API for ShopifyService service.
@@ -31,6 +32,7 @@ type ShopifyServiceClient interface {
 	GetAuthorizationURL(ctx context.Context, in *GetAuthorizationURLRequest, opts ...grpc.CallOption) (*GetAuthorizationURLResponse, error)
 	ExchangeAccessToken(ctx context.Context, in *ExchangeAccessTokenRequest, opts ...grpc.CallOption) (*ExchangeAccessTokenResponse, error)
 	GetOrdersForShopAndAccount(ctx context.Context, in *GetOrdersForShopAndAccountRequest, opts ...grpc.CallOption) (*GetOrdersForShopAndAccountResponse, error)
+	SyncOrders(ctx context.Context, in *SyncOrderRequest, opts ...grpc.CallOption) (*SyncOrderResponse, error)
 }
 
 type shopifyServiceClient struct {
@@ -71,6 +73,16 @@ func (c *shopifyServiceClient) GetOrdersForShopAndAccount(ctx context.Context, i
 	return out, nil
 }
 
+func (c *shopifyServiceClient) SyncOrders(ctx context.Context, in *SyncOrderRequest, opts ...grpc.CallOption) (*SyncOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SyncOrderResponse)
+	err := c.cc.Invoke(ctx, ShopifyService_SyncOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ShopifyServiceServer is the server API for ShopifyService service.
 // All implementations must embed UnimplementedShopifyServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type ShopifyServiceServer interface {
 	GetAuthorizationURL(context.Context, *GetAuthorizationURLRequest) (*GetAuthorizationURLResponse, error)
 	ExchangeAccessToken(context.Context, *ExchangeAccessTokenRequest) (*ExchangeAccessTokenResponse, error)
 	GetOrdersForShopAndAccount(context.Context, *GetOrdersForShopAndAccountRequest) (*GetOrdersForShopAndAccountResponse, error)
+	SyncOrders(context.Context, *SyncOrderRequest) (*SyncOrderResponse, error)
 	mustEmbedUnimplementedShopifyServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedShopifyServiceServer) ExchangeAccessToken(context.Context, *E
 }
 func (UnimplementedShopifyServiceServer) GetOrdersForShopAndAccount(context.Context, *GetOrdersForShopAndAccountRequest) (*GetOrdersForShopAndAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrdersForShopAndAccount not implemented")
+}
+func (UnimplementedShopifyServiceServer) SyncOrders(context.Context, *SyncOrderRequest) (*SyncOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncOrders not implemented")
 }
 func (UnimplementedShopifyServiceServer) mustEmbedUnimplementedShopifyServiceServer() {}
 func (UnimplementedShopifyServiceServer) testEmbeddedByValue()                        {}
@@ -172,6 +188,24 @@ func _ShopifyService_GetOrdersForShopAndAccount_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ShopifyService_SyncOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShopifyServiceServer).SyncOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShopifyService_SyncOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShopifyServiceServer).SyncOrders(ctx, req.(*SyncOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ShopifyService_ServiceDesc is the grpc.ServiceDesc for ShopifyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var ShopifyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrdersForShopAndAccount",
 			Handler:    _ShopifyService_GetOrdersForShopAndAccount_Handler,
+		},
+		{
+			MethodName: "SyncOrders",
+			Handler:    _ShopifyService_SyncOrders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
