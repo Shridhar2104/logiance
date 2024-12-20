@@ -1,86 +1,66 @@
 syntax = "proto3";
 
-package payment;
+package pb;
 
 option go_package = "/pb";
-// The Payment service definition.
+
 service PaymentService {
-    // Recharges the wallet for a user.
-    rpc RechargeWallet(RechargeRequest) returns (RechargeResponse);
-
-    // Deducts an amount from the wallet for shipping an order.
-    rpc DeductBalance(DeductionRequest) returns (DeductionResponse);
-
-    // Processes COD remittance for orders marked as delivered after 15 days.
-    rpc ProcessRemittance(RemittanceRequest) returns (RemittanceResponse);
-
-    // Retrieves the wallet balance and transaction history.
-    rpc GetWalletDetails(WalletDetailsRequest) returns (WalletDetailsResponse);
+  rpc RechargeWallet(RechargeWalletRequest) returns (RechargeWalletResponse);
+  rpc DeductBalance(DeductBalanceRequest) returns (DeductBalanceResponse);
+  rpc ProcessRemittance(ProcessRemittanceRequest) returns (ProcessRemittanceResponse);
+  rpc GetWalletDetails(GetWalletDetailsRequest) returns (WalletDetailsResponse);
 }
 
-// Request to recharge the wallet.
-message RechargeRequest {
-    string user_id = 1; // The ID of the user.
-    double amount = 2;  // The amount to recharge.
+message RechargeWalletRequest {
+  string account_id = 1;
+  double amount = 2;
 }
 
-// Response for wallet recharge.
-message RechargeResponse {
-    bool success = 1;    // Indicates if the recharge was successful.
-    string message = 2;  // Additional message (e.g., "Recharge successful").
-    double new_balance = 3; // Updated wallet balance.
+message RechargeWalletResponse {
+  string account_id = 1;
+  double new_balance = 2;
 }
 
-// Request to deduct balance for shipping.
-message DeductionRequest {
-    string user_id = 1;    // The ID of the user.
-    double amount = 2;     // The amount to deduct.
-    string order_id = 3;   // The associated order ID.
+message DeductBalanceRequest {
+  string account_id = 1;
+  double amount = 2;
+  string order_id = 3;
 }
 
-// Response for balance deduction.
-message DeductionResponse {
-    bool success = 1;    // Indicates if the deduction was successful.
-    string message = 2;  // Additional message (e.g., "Deduction successful").
-    double new_balance = 3; // Updated wallet balance.
+message DeductBalanceResponse {
+  string account_id = 1;
+  double new_balance = 2;
 }
 
-// Request to process COD remittance.
-message RemittanceRequest {
-    string user_id = 1;    // The ID of the user.
-    repeated string order_ids = 2; // List of order IDs eligible for remittance.
+message ProcessRemittanceRequest {
+  string account_id = 1;
+  repeated string order_ids = 2;
 }
 
-// Response for COD remittance processing.
-message RemittanceResponse {
-    bool success = 1;       // Indicates if the remittance was successful.
-    string message = 2;     // Additional message (e.g., "Remittance processed").
-    repeated RemittanceDetail details = 3; // Details of remittance processing.
+message ProcessRemittanceResponse {
+  repeated RemittanceDetail remittance_details = 1;
 }
 
-// Details for each remittance processed.
 message RemittanceDetail {
-    string order_id = 1;   // The associated order ID.
-    double amount = 2;     // Amount remitted for this order.
-    bool processed = 3;    // Whether the remittance was successful for this order.
+  string order_id = 1;
+  double amount = 2;
+  bool processed = 3;
 }
 
-// Request to retrieve wallet details.
-message WalletDetailsRequest {
-    string user_id = 1; // The ID of the user.
+message GetWalletDetailsRequest {
+  string account_id = 1;
 }
 
-// Response with wallet details and transaction history.
 message WalletDetailsResponse {
-    double balance = 1;                       // Current wallet balance.
-    repeated Transaction transaction_history = 2; // List of past transactions.
+  string account_id = 1;
+  double balance = 2;
+  repeated Transaction transactions = 3;
 }
 
-// Transaction history details.
 message Transaction {
-    string transaction_id = 1;     // Unique ID for the transaction.
-    string transaction_type = 2;   // Type of transaction (e.g., "recharge", "deduction", "remittance").
-    double amount = 3;             // Amount of the transaction.
-    string order_id = 4;           // Associated order ID, if applicable.
-    string timestamp = 5;          // Timestamp of the transaction.
+  string transaction_id = 1;
+  string transaction_type = 2;
+  double amount = 3;
+  optional string order_id = 4;
+  string timestamp = 5;
 }

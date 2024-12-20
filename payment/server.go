@@ -1,103 +1,121 @@
 package payment
 
 import (
-	"context"
-	"fmt"
-	"net"
-
-	"github.com/Shridhar2104/logilo/payment/pb"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"encoding/json"
+	"net/http"
 )
 
-type grpcServer struct {
-	pb.UnimplementedPaymentServiceServer
+type Server struct {
 	service Service
 }
 
-// NewGRPCServer creates and starts a new gRPC server.
-func NewGRPCServer(service Service, port int) error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		return err
+func NewServer(service Service) *Server {
+	return &Server{service: service}
+}
+
+func (s *Server) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/wallet/recharge", s.RechargeWalletHandler)
+	mux.HandleFunc("/wallet/deduct", s.DeductBalanceHandler)
+	mux.HandleFunc("/wallet/remittance", s.ProcessRemittanceHandler)
+	mux.HandleFunc("/wallet/details", s.GetWalletDetailsHandler)
+}
+
+func (s *Server) RechargeWalletHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
-	server := grpc.NewServer()
-	pb.RegisterPaymentServiceServer(server, &grpcServer{
-		service: service,
+	var req struct {
+		AccountID string  `json:"account_id"`
+		Amount    float64 `json:"amount"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	balance, err := s.service.RechargeWallet(r.Context(), req.AccountID, req.Amount)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"account_id": req.AccountID,
+		"balance":    balance,
 	})
-	reflection.Register(server)
-	fmt.Printf("gRPC server running on port %d\n", port)
-	return server.Serve(lis)
 }
 
-// RechargeWallet handles wallet recharge requests.
-func (s *grpcServer) RechargeWallet(ctx context.Context, req *pb.RechargeRequest) (*pb.RechargeResponse, error) {
-	newBalance, err := s.service.RechargeWallet(ctx, req.UserId, req.Amount)
-	if err != nil {
-		return nil, err
+func (s *Server) DeductBalanceHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
-	return &pb.RechargeResponse{
-		NewBalance: newBalance,
-	}, nil
+	var req struct {
+		AccountID string  `json:"account_id"`
+		Amount    float64 `json:"amount"`
+		OrderID   string  `json:"order_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	balance, err := s.service.DeductBalance(r.Context(), req.AccountID, req.Amount, req.OrderID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"account_id": req.AccountID,
+		"balance":    balance,
+	})
 }
 
-// DeductBalance handles wallet balance deduction for an order.
-func (s *grpcServer) DeductBalance(ctx context.Context, req *pb.DeductionRequest) (*pb.DeductionResponse, error) {
-	newBalance, err := s.service.DeductBalance(ctx, req.UserId, req.Amount, req.OrderId)
-	if err != nil {
-		return nil, err
+func (s *Server) ProcessRemittanceHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
-	return &pb.DeductionResponse{
-		NewBalance: newBalance,
-	}, nil
+	var req struct {
+		AccountID string   `json:"account_id"`
+		OrderIDs  []string `json:"order_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	details, err := s.service.ProcessRemittance(r.Context(), req.AccountID, req.OrderIDs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(details)
 }
 
-// ProcessRemittance handles the remittance processing for COD orders.
-func (s *grpcServer) ProcessRemittance(ctx context.Context, req *pb.RemittanceRequest) (*pb.RemittanceResponse, error) {
-	remittanceDetails, err := s.service.ProcessRemittance(ctx, req.UserId, req.OrderIds)
+func (s *Server) GetWalletDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	accountID := r.URL.Query().Get("account_id")
+	if accountID == "" {
+		http.Error(w, "Missing account_id query parameter", http.StatusBadRequest)
+		return
+	}
+
+	walletDetails, err := s.service.GetWalletDetails(r.Context(), accountID)
 	if err != nil {
-		return nil, err
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	// Map the remittance details to the gRPC response format.
-	var remittanceItems []*pb.RemittanceDetail
-	for _, detail := range remittanceDetails {
-		remittanceItems = append(remittanceItems, &pb.RemittanceDetail{
-			OrderId:         detail.OrderID,
-			Amount:          detail.Amount,
-			Processed:       detail.Processed,
-		})
-	}
-
-	return &pb.RemittanceResponse{
-		Details: remittanceItems,
-	}, nil
-}
-
-// GetWalletDetails retrieves wallet balance and transaction history.
-func (s *grpcServer) GetWalletDetails(ctx context.Context, req *pb.WalletDetailsRequest) (*pb.WalletDetailsResponse, error) {
-	balance, transactions, err := s.service.GetWalletDetails(ctx, req.UserId)
-	if err != nil {
-		return nil, err
-	}
-
-	// Map the transactions to the gRPC response format.
-	var transactionItems []*pb.Transaction
-	for _, t := range transactions {
-		transactionItems = append(transactionItems, &pb.Transaction{
-			TransactionId:   t.TransactionID,
-			TransactionType: t.TransactionType,
-			Amount:          t.Amount,
-			OrderId:         t.OrderID.String,
-		})
-	}
-
-	return &pb.WalletDetailsResponse{
-		Balance:      balance,
-		TransactionHistory: transactionItems,
-
-	}, nil
+	json.NewEncoder(w).Encode(walletDetails)
 }

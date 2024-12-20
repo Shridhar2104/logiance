@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.60
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
+	github.com/razorpay/razorpay-go v1.3.2
 	github.com/vektah/gqlparser/v2 v2.5.20
 	golang.org/x/crypto v0.27.0
 	google.golang.org/grpc v1.68.1
