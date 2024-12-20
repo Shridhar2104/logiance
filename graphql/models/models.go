@@ -38,3 +38,21 @@ type OrderInput struct {
 	Amount float64 `json:"amount"`
 	Description string `json:"description"`
 }
+
+type ShopSyncStatus struct {
+    Success      bool    `json:"success"`
+    ErrorMessage string  `json:"errorMessage,omitempty"`
+    OrdersCount  int     `json:"ordersCount"`
+}
+
+type ShopSyncDetails struct {
+    ShopName string         `json:"shopName"`
+    Status   *ShopSyncStatus `json:"status"`
+}
+
+type SyncOrdersResult struct {
+    OverallSuccess bool               `json:"overallSuccess"`
+    Message        string            `json:"message,omitempty"`
+    ShopResults    []*ShopSyncDetails `json:"shopResults"`
+}
+

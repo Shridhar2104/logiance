@@ -2,6 +2,10 @@
 
 package main
 
+import (
+	"github.com/Shridhar2104/logilo/graphql/models"
+)
+
 type AccountInput struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
@@ -9,30 +13,15 @@ type AccountInput struct {
 }
 
 type Accounts struct {
-	Orders []*Order `json:"orders"`
+	Orders []*models.Order `json:"orders"`
 }
 
 type Mutation struct {
 }
 
-type Order struct {
-	ID          string           `json:"id"`
-	Amount      float64          `json:"amount"`
-	AccountID   string           `json:"accountId"`
-	CreatedAt   string           `json:"createdAt"`
-	Description string           `json:"description"`
-	LineItems   []*OrderLineItem `json:"lineItems"`
-}
-
 type OrderInput struct {
 	AccountID string                `json:"accountId"`
 	LineItems []*OrderLineItemInput `json:"lineItems"`
-}
-
-type OrderLineItem struct {
-	ID          string  `json:"id"`
-	Amount      float64 `json:"amount"`
-	Description string  `json:"description"`
 }
 
 type OrderLineItemInput struct {
@@ -47,8 +36,4 @@ type PaginationInput struct {
 }
 
 type Query struct {
-}
-
-type ShopName struct {
-	Shopname string `json:"shopname"`
 }

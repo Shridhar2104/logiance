@@ -1,4 +1,5 @@
 -- Create the table with the id column as UUID
+DROP TABLE IF EXISTS accounts;
 CREATE TABLE IF NOT EXISTS accounts (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
