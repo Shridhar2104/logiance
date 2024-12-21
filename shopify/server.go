@@ -3,6 +3,7 @@ package shopify
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"net"
@@ -134,5 +135,59 @@ func (s *grpcServer) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb
         CreatedAt:         order.CreatedAt.Format(time.RFC3339),
         CustomerEmail:     order.Customer.Email,
         CustomerName:      fmt.Sprintf("%s %s", order.Customer.FirstName, order.Customer.LastName),
+    }, nil
+}
+// Add this function to server.go
+func (s *grpcServer) GetOrdersForAccount(ctx context.Context, req *pb.GetOrdersForAccountRequest) (*pb.GetOrdersForAccountResponse, error) {
+    if req.PageSize == 0 {
+        req.PageSize = 20 // default page size
+    }
+    if req.Page == 0 {
+        req.Page = 1 // default page
+    }
+
+    orders, totalCount, err := s.service.GetAccountOrders(
+        ctx,
+        req.AccountId,
+        int(req.Page),
+        int(req.PageSize),
+    )
+    if err != nil {
+        return nil, fmt.Errorf("failed to get orders: %w", err)
+    }
+
+    // Convert orders to proto format
+    pbOrders := make([]*pb.Order, len(orders))
+    for i, order := range orders {
+        customerName := ""
+        if order.Customer.FirstName != "" || order.Customer.LastName != "" {
+            customerName = strings.TrimSpace(order.Customer.FirstName + " " + order.Customer.LastName)
+        }
+
+        pbOrders[i] = &pb.Order{
+            Id:                fmt.Sprintf("%d", order.ID),
+            OrderName:         order.Name,
+            AccountId:         req.AccountId,
+            TotalPrice:        float32(order.TotalPrice),
+            SubtotalPrice:     float32(order.SubtotalPrice),
+            TotalTax:         float32(order.TotalTax),
+            Currency:         order.Currency,
+            FinancialStatus:  order.FinancialStatus,
+            FulfillmentStatus: order.FulfillmentStatus,
+            CreatedAt:        order.CreatedAt.Format(time.RFC3339),
+            CustomerEmail:    order.Customer.Email,
+            CustomerName:     customerName,
+        }
+    }
+
+    // Calculate total pages
+    pageSize := int(req.PageSize)
+    totalPages := (totalCount + pageSize - 1) / pageSize
+
+    return &pb.GetOrdersForAccountResponse{
+        Orders:      pbOrders,
+        TotalCount:  int32(totalCount),
+        TotalPages:  int32(totalPages),
+        CurrentPage: req.Page,
     }, nil
 }
