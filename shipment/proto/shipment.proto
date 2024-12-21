@@ -1,0 +1,50 @@
+// shipment/proto/shipment.proto
+syntax = "proto3";
+
+package shipment;
+option go_package = "shipment/proto";
+
+service ShipmentService {
+  rpc CalculateShippingRate (ShippingRateRequest) returns (ShippingRateResponse);
+}
+
+message Address {
+  string street_line1 = 1;
+  string street_line2 = 2;
+  string city = 3;
+  string state = 4;
+  string postal_code = 5;  // 6-digit PIN code for India
+  string country = 6;
+}
+
+message Package {
+  float weight_kg = 1;
+  float length_cm = 2;
+  float width_cm = 3;
+  float height_cm = 4;
+  string payment_mode = 5;  // COD/Prepaid
+}
+
+message ShippingRateRequest {
+  string order_id = 1;
+  Address origin = 2;
+  Address destination = 3;
+  Package package = 4;
+  string service_level = 5;  // express/surface
+}
+
+message Rate {
+  string courier_name = 1;
+  string service_name = 2;
+  float amount = 3;
+  string currency = 4;
+  int32 estimated_days = 5;
+  float gross_amount = 6;
+  float tax_amount = 7;
+}
+
+message ShippingRateResponse {
+  string request_id = 1;
+  repeated Rate rates = 2;
+  string error_message = 3;
+}
