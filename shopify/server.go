@@ -3,6 +3,7 @@ package shopify
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"net"
 
@@ -72,6 +73,28 @@ func (s *grpcServer) SyncOrders(ctx context.Context, r *pb.SyncOrderRequest) (*p
     }, nil
 }
 
+// Update the GetOrdersForShopAndAccount function in server.go
+func (s *grpcServer) GetOrdersForShopAndAccount(ctx context.Context, r *pb.GetOrdersForShopAndAccountRequest) (*pb.GetOrdersForShopAndAccountResponse, error) {
+    // Now we only need accountId, as we'll fetch orders from all shops
+    orders, _, err := s.service.GetAccountOrders(ctx, r.AccountId, 1, 100) // You can make page and pageSize configurable
+    if err != nil {
+        return nil, fmt.Errorf("failed to get orders: %w", err)
+    }
+
+    ordersPb := make([]*pb.Order, len(orders))
+    for i, order := range orders {
+        ordersPb[i] = &pb.Order{
+            Id:         fmt.Sprintf("%d", order.ID),
+            AccountId:  r.AccountId,
+            TotalPrice: float32(order.TotalPrice),
+            OrderName:    order.Name,
+        }
+    }
+
+    return &pb.GetOrdersForShopAndAccountResponse{
+        Orders: ordersPb,
+    }, nil
+}
 // func (s *grpcServer) GetOrdersForShopAndAccount(ctx context.Context, r *pb.GetOrdersForShopAndAccountRequest) (*pb.GetOrdersForShopAndAccountResponse, error){
 // 	orders, err := s.service.GetOrdersForShopAndAccount(ctx, r.ShopName, r.AccountId)
 // 	if err != nil {
@@ -92,3 +115,24 @@ func (s *grpcServer) SyncOrders(ctx context.Context, r *pb.SyncOrderRequest) (*p
 // 	}, nil
 
 // }
+
+func (s *grpcServer) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.Order, error) {
+    order, err := s.service.GetOrder(ctx, req.OrderId)
+    if err != nil {
+        return nil, err
+    }
+
+    return &pb.Order{
+        Id:               string(order.ID),
+        OrderName:         order.Name,
+        TotalPrice:        float32(order.TotalPrice),
+        SubtotalPrice:     float32(order.SubtotalPrice),
+        TotalTax:          float32(order.TotalTax),
+        Currency:          order.Currency,
+        FinancialStatus:   order.FinancialStatus,
+        FulfillmentStatus: order.FulfillmentStatus,
+        CreatedAt:         order.CreatedAt.Format(time.RFC3339),
+        CustomerEmail:     order.Customer.Email,
+        CustomerName:      fmt.Sprintf("%s %s", order.Customer.FirstName, order.Customer.LastName),
+    }, nil
+}

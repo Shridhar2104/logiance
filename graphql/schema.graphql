@@ -13,20 +13,67 @@ type ShopName {
     shopname: String!
 }
 
+type Order {
+    id: String!
+    name: String!
+    orderNumber: Int
+    amount: Float!
+    accountId: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    cancelledAt: DateTime
+    closedAt: DateTime
+    processedAt: DateTime
+    currency: String!
+    totalPrice: Float!
+    subtotalPrice: Float!
+    totalDiscounts: Float
+    totalTax: Float
+    taxesIncluded: Boolean
+    financialStatus: String
+    fulfillmentStatus: String
+    description: String
+    lineItems: [OrderLineItem!]!
+    customer: Customer
+    shopName: String!
+}
+
 type OrderLineItem {
-	id: String!
-	amount: Float!
+    id: String!
+    amount: Float!
     description: String!
 }
 
-type Order {
-	id: String!
-	amount: Float!
-    accountId: String!
-	createdAt: DateTime!
-    description: String!
-    lineItems: [OrderLineItem!]!
+
+type Customer {
+    id: String
+    email: String
+    firstName: String
+    lastName: String
+    phone: String
 }
+
+# Pagination types
+type OrderConnection {
+    edges: [OrderEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type OrderEdge {
+    node: Order!
+    cursor: String!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+    totalPages: Int!
+    currentPage: Int!
+}
+
 
 type ShopSyncStatus {
     success: Boolean!
@@ -45,7 +92,40 @@ type SyncOrdersResult {
     shopResults: [ShopSyncDetails!]!
 }
 
+input OrderPaginationInput {
+    page: Int
+    pageSize: Int
+    filter: OrderFilter
+    sort: OrderSort
+}
 
+
+input OrderFilter {
+    createdAtStart: DateTime
+    createdAtEnd: DateTime
+    financialStatus: String
+    fulfillmentStatus: String
+    minTotalPrice: Float
+    maxTotalPrice: Float
+    searchTerm: String
+}
+
+input OrderSort {
+    field: OrderSortField!
+    direction: SortDirection!
+}
+
+enum OrderSortField {
+    CREATED_AT
+    UPDATED_AT
+    ORDER_NUMBER
+    TOTAL_PRICE
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
 
 
 input PaginationInput {
@@ -82,6 +162,8 @@ type Mutation {
 type Query {
     getAccountByID(email: String!, password: String!): Account!
     accounts(pagination: PaginationInput!): [Account!]!
+    getOrdersForAccount(accountId: String!, pagination: OrderPaginationInput): OrderConnection!
+    getOrder(id: String!): Order
 } 
 
 type Accounts {

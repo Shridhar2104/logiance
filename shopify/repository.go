@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	goshopify "github.com/bold-commerce/go-shopify/v4"
 	"github.com/lib/pq"
 )
 type Repository interface {
@@ -14,6 +15,8 @@ type Repository interface {
     SaveShopCredentials(ctx context.Context, shop, accountId, token string) error
     SyncOrders(ctx context.Context, orders []Order, shopName, accountId string) (bool, error)
     GetLatestOrderTimestamp(ctx context.Context, shopName, accountId string) (time.Time, error)
+	GetAccountOrders(ctx context.Context, accountId string, limit, offset int) ([]Order, int, error)
+	GetOrder(ctx context.Context, orderID string) (*Order, error)
     Close() 
 }
 type PostgresRepository struct {
@@ -26,6 +29,162 @@ func NewPostgresRepository(db *sql.DB) Repository {
 // Close releases the database connection resources.
 func (r *PostgresRepository) Close() {
 	r.db.Close()
+}
+
+// Update in repository.go
+
+func (r *PostgresRepository) GetOrder(ctx context.Context, orderID string) (*Order, error) {
+    query := `
+        SELECT 
+            id, name, email, created_at, updated_at, cancelled_at, 
+            closed_at, processed_at, currency, total_price, subtotal_price,
+            total_discounts, total_tax, taxes_included, financial_status,
+            fulfillment_status, order_number, test, browser_ip,
+            cancel_reason, tags, gateway, confirmed, contact_email, phone,
+            customer_id, customer_email, customer_first_name, 
+            customer_last_name, customer_phone
+        FROM orders 
+        WHERE id = $1`
+
+    row := r.db.QueryRowContext(ctx, query, orderID)
+
+    var order Order
+    var customerID sql.NullInt64
+    var customerEmail, customerFirstName, customerLastName, customerPhone sql.NullString
+    var cancelledAt, closedAt, processedAt sql.NullTime
+
+    err := row.Scan(
+        &order.ID, &order.Name, &order.Email, &order.CreatedAt, &order.UpdatedAt,
+        &cancelledAt, &closedAt, &processedAt, &order.Currency,
+        &order.TotalPrice, &order.SubtotalPrice, &order.TotalDiscounts,
+        &order.TotalTax, &order.TaxesIncluded, &order.FinancialStatus,
+        &order.FulfillmentStatus, &order.OrderNumber, &order.Test,
+        &order.BrowserIp, &order.CancelReason, &order.Tags, &order.Gateway,
+        &order.Confirmed, &order.ContactEmail, &order.Phone,
+        &customerID, &customerEmail, &customerFirstName, 
+        &customerLastName, &customerPhone,
+    )
+
+    if err == sql.ErrNoRows {
+        return nil, fmt.Errorf("order not found: %s", orderID)
+    }
+    if err != nil {
+        return nil, fmt.Errorf("failed to scan order row: %w", err)
+    }
+
+    // Handle nullable timestamps
+    if cancelledAt.Valid {
+        order.CancelledAt = &cancelledAt.Time
+    }
+    if closedAt.Valid {
+        order.ClosedAt = &closedAt.Time
+    }
+    if processedAt.Valid {
+        order.ProcessedAt = &processedAt.Time
+    }
+
+    // Handle customer information
+    if customerID.Valid {
+        order.Customer = goshopify.Customer{
+            Id:        uint64(customerID.Int64),
+            Email:     customerEmail.String,
+            FirstName: customerFirstName.String,
+            LastName:  customerLastName.String,
+            Phone:     customerPhone.String,
+        }
+    }
+
+    return &order, nil
+}
+// Implementation for getting all orders for an account
+func (r *PostgresRepository) GetAccountOrders(ctx context.Context, accountId string, limit, offset int) ([]Order, int, error) {
+    // First, get total count for all shops under this account
+    countQuery := `
+        SELECT COUNT(*)
+        FROM orders
+        WHERE account_id = $1`
+    
+    var totalCount int
+    err := r.db.QueryRowContext(ctx, countQuery, accountId).Scan(&totalCount)
+    if err != nil {
+        return nil, 0, fmt.Errorf("failed to get total order count: %w", err)
+    }
+
+    // Then get orders with pagination
+    query := `
+        SELECT 
+            id, name, email, created_at, updated_at, cancelled_at, 
+            closed_at, processed_at, currency, total_price, subtotal_price,
+            total_discounts, total_tax, taxes_included, financial_status,
+            fulfillment_status, order_number, test, browser_ip,
+            cancel_reason, tags, gateway, confirmed, contact_email, phone,
+            shop_name, customer_id, customer_email, customer_first_name, 
+            customer_last_name, customer_phone
+        FROM orders 
+        WHERE account_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3`
+
+    rows, err := r.db.QueryContext(ctx, query, accountId, limit, offset)
+    if err != nil {
+        return nil, 0, fmt.Errorf("failed to query orders: %w", err)
+    }
+    defer rows.Close()
+
+    var orders []Order
+    for rows.Next() {
+        var order Order
+        var customerID sql.NullInt64
+        var customerEmail, customerFirstName, customerLastName, customerPhone sql.NullString
+        var cancelledAt, closedAt, processedAt sql.NullTime
+        var shopName string
+
+        err := rows.Scan(
+            &order.ID, &order.Name, &order.Email, &order.CreatedAt, &order.UpdatedAt,
+            &cancelledAt, &closedAt, &processedAt, &order.Currency,
+            &order.TotalPrice, &order.SubtotalPrice, &order.TotalDiscounts,
+            &order.TotalTax, &order.TaxesIncluded, &order.FinancialStatus,
+            &order.FulfillmentStatus, &order.OrderNumber, &order.Test,
+            &order.BrowserIp, &order.CancelReason, &order.Tags, &order.Gateway,
+            &order.Confirmed, &order.ContactEmail, &order.Phone,
+            &shopName, &customerID, &customerEmail, &customerFirstName, &customerLastName,
+            &customerPhone,
+        )
+        if err != nil {
+            return nil, 0, fmt.Errorf("failed to scan order row: %w", err)
+        }
+
+        // Handle nullable timestamps
+        if cancelledAt.Valid {
+            order.CancelledAt = &cancelledAt.Time
+        }
+        if closedAt.Valid {
+            order.ClosedAt = &closedAt.Time
+        }
+        if processedAt.Valid {
+            order.ProcessedAt = &processedAt.Time
+        }
+
+        // Handle customer information
+        if customerID.Valid {
+            order.Customer = goshopify.Customer{
+                Id:        uint64(customerID.Int64),
+                Email:     customerEmail.String,
+                FirstName: customerFirstName.String,
+                LastName:  customerLastName.String,
+                Phone:     customerPhone.String,
+            }
+        }
+
+
+        orders = append(orders, order)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, 0, fmt.Errorf("error iterating order rows: %w", err)
+    }
+
+    return orders, totalCount, nil
 }
 
 func (r *PostgresRepository) GetShopTokens(ctx context.Context, accountId string) (map[string]string, error) {

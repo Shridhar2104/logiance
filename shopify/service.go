@@ -26,6 +26,9 @@ type Service interface {
 	GenerateAuthURL(ctx context.Context, shopName, state string) (string, error)
 	ExchangeAccessToken(ctx context.Context, shop, code, accountId string) error
 	SyncOrdersForAccount(ctx context.Context, accountId string) (map[string]*pb.ShopSyncStatus, error)
+	GetAccountOrders(ctx context.Context, accountId string, page, pageSize int) ([]Order, int, error)
+	GetOrder(ctx context.Context, orderID string) (*Order, error)
+
 }
 
 type ShopifyService struct {
@@ -86,6 +89,39 @@ func NewShopifyService(apiKey, apiSecret, redirectURL string, repo Repository) S
 		Repo: repo,
 	}
 }
+
+// GetOrder retrieves a single order by ID
+func (s *ShopifyService) GetOrder(ctx context.Context, orderID string) (*Order, error) {
+    if s == nil || s.Repo == nil {
+        return nil, fmt.Errorf("shopify service not properly initialized")
+    }
+
+    if orderID == "" {
+        return nil, fmt.Errorf("order ID cannot be empty")
+    }
+
+    order, err := s.Repo.GetOrder(ctx, orderID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get order: %w", err)
+    }
+
+    return order, nil
+}
+
+
+// Implementation for getting all orders for an account
+func (s *ShopifyService) GetAccountOrders(ctx context.Context, accountId string, page, pageSize int) ([]Order, int, error) {
+    if page < 1 {
+        page = 1
+    }
+    if pageSize < 1 {
+        pageSize = 50 // default page size
+    }
+
+    offset := (page - 1) * pageSize
+    return s.Repo.GetAccountOrders(ctx, accountId, pageSize, offset)
+}
+
 
 func (s *ShopifyService) SyncOrdersForAccount(ctx context.Context, accountId string) (map[string]*pb.ShopSyncStatus, error) {
 	if s == nil || s.Repo == nil {
