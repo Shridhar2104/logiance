@@ -71,11 +71,76 @@ input OrderInput {
     lineItems: [OrderLineItemInput!]!
 }
 
+#shipping types
+input ShippingRateInput {
+  originPincode: Int!
+  destinationPincode: Int!
+  weight: Int!
+  courierCodes: [String!]
+  paymentMode: PaymentMode!
+  dimensions: [PackageDimensionInput!]
+}
+
+input PackageDimensionInput {
+  length: Float!
+  width: Float!
+  height: Float!
+  weight: Float!
+}
+
+input AvailabilityInput {
+  originPincode: Int!
+  destinationPincode: Int!
+}
+
+enum PaymentMode {
+  COD
+  PREPAID
+}
+
+type ShippingRateResponse {
+  success: Boolean!
+  rates: [CourierRate!]
+  error: String
+}
+
+type CourierRate {
+  courierCode: String!
+  courierName: String!
+  serviceType: String!
+  rateDetails: RateDetails!
+  estimatedDays: Int!
+}
+
+type RateDetails {
+  totalAmount: Float!
+  grossAmount: Float!
+  taxAmount: Float!
+  codCharges: Float!
+  fuelSurcharge: Float!
+}
+
+type CourierAvailabilityResponse {
+  success: Boolean!
+  availableCouriers: [CourierInfo!]!
+  error: String
+}
+
+type CourierInfo {
+  courierCode: String!
+  courierName: String!
+  supportedServices: [String!]!
+}
+
 type Mutation {
     createAccount(Account: AccountInput!): Account!
     integrateShop(shopName: String!): String!
     exchangeAccessToken(shopName: String!, code: String!, accountId: String!): Boolean!
-    syncOrders(accountId: String!): SyncOrdersResult!  
+    syncOrders(accountId: String!): SyncOrdersResult! 
+
+    #shipping part starts here
+    calculateShippingRates(input: ShippingRateInput!): ShippingRateResponse!
+    getAvailableCouriers(input: AvailabilityInput!): CourierAvailabilityResponse! 
 
 }
 

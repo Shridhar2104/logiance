@@ -56,3 +56,66 @@ type SyncOrdersResult struct {
     ShopResults    []*ShopSyncDetails `json:"shopResults"`
 }
 
+
+
+type ShippingRateInput struct {
+    OriginPincode      int                    `json:"originPincode"`
+    DestinationPincode int                    `json:"destinationPincode"`
+    Weight             int                    `json:"weight"`
+    CourierCodes       []string               `json:"courierCodes,omitempty"`
+    PaymentMode        PaymentMode            `json:"paymentMode"`
+    Dimensions         []PackageDimensionInput `json:"dimensions,omitempty"`
+}
+
+type PackageDimensionInput struct {
+    Length float64 `json:"length"`
+    Width  float64 `json:"width"`
+    Height float64 `json:"height"`
+    Weight float64 `json:"weight"`
+}
+
+type AvailabilityInput struct {
+    OriginPincode      int `json:"originPincode"`
+    DestinationPincode int `json:"destinationPincode"`
+}
+
+type PaymentMode string
+
+const (
+    PaymentModeCOD     PaymentMode = "COD"
+    PaymentModePREPAID PaymentMode = "PREPAID"
+)
+
+type ShippingRateResponse struct {
+    Success bool           `json:"success"`
+    Rates   []*CourierRate `json:"rates,omitempty"`
+    Error   string        `json:"error,omitempty"`
+}
+
+type CourierRate struct {
+    CourierCode    string       `json:"courierCode"`
+    CourierName    string       `json:"courierName"`
+    ServiceType    string       `json:"serviceType"`
+    RateDetails    *RateDetails `json:"rateDetails"`
+    EstimatedDays  int         `json:"estimatedDays"`
+}
+
+type RateDetails struct {
+    TotalAmount    float64 `json:"totalAmount"`
+    GrossAmount    float64 `json:"grossAmount"`
+    TaxAmount      float64 `json:"taxAmount"`
+    CodCharges     float64 `json:"codCharges"`
+    FuelSurcharge  float64 `json:"fuelSurcharge"`
+}
+
+type CourierAvailabilityResponse struct {
+    Success           bool           `json:"success"`
+    AvailableCouriers []*CourierInfo `json:"availableCouriers"`
+    Error            string        `json:"error,omitempty"`
+}
+
+type CourierInfo struct {
+    CourierCode       string   `json:"courierCode"`
+    CourierName       string   `json:"courierName"`
+    SupportedServices []string `json:"supportedServices"`
+}

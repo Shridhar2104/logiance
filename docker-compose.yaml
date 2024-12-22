@@ -1,3 +1,12 @@
+x-common-variables: &common-variables
+  DELHIVERY_API_KEY: ${DELHIVERY_API_KEY}
+  DELHIVERY_BASE_URL: ${DELHIVERY_BASE_URL}
+  DELHIVERY_RATE_LIMIT: ${DELHIVERY_RATE_LIMIT:-40}
+  BLUEDART_API_KEY: ${BLUEDART_API_KEY}
+  BLUEDART_BASE_URL: ${BLUEDART_BASE_URL}
+  BLUEDART_RATE_LIMIT: ${BLUEDART_RATE_LIMIT:-30}
+
+
 services:
   shopify-db:
     build: 
@@ -29,6 +38,20 @@ services:
       - "8080:8080"  # Adjust if your service runs on different ports
     env_file:
       - .env.development 
+    
+  shipment-service:
+    build:
+      context: .
+      dockerfile: ./shipment/app.dockerfile
+    environment:
+      <<: *common-variables
+    env_file:
+      - .env.development
+    networks:
+      - logilo-network
+    ports:
+      - "50051:50051"
+    restart: on-failure
 
   graphql-service:
     build:
@@ -37,6 +60,7 @@ services:
     environment:
       - ACCOUNT_URL=account-service:8081
       - SHOPIFY_URL=shopify-service:8080
+      - SHIPMENT_URL=shipment-service:50051
     networks:
       - logilo-network
     ports:
@@ -47,6 +71,7 @@ services:
     depends_on:
       - shopify-service
       - account-service
+      - shipment-service
 
   account-db:
     build: 

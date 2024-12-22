@@ -3,6 +3,10 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"strconv"
+
 	"github.com/Shridhar2104/logilo/graphql/models"
 )
 
@@ -14,6 +18,11 @@ type AccountInput struct {
 
 type Accounts struct {
 	Orders []*models.Order `json:"orders"`
+}
+
+type AvailabilityInput struct {
+	OriginPincode      int `json:"originPincode"`
+	DestinationPincode int `json:"destinationPincode"`
 }
 
 type Mutation struct {
@@ -30,10 +39,67 @@ type OrderLineItemInput struct {
 	Description string  `json:"description"`
 }
 
+type PackageDimensionInput struct {
+	Length float64 `json:"length"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+	Weight float64 `json:"weight"`
+}
+
 type PaginationInput struct {
 	Skip int `json:"skip"`
 	Take int `json:"take"`
 }
 
 type Query struct {
+}
+
+type ShippingRateInput struct {
+	OriginPincode      int                      `json:"originPincode"`
+	DestinationPincode int                      `json:"destinationPincode"`
+	Weight             int                      `json:"weight"`
+	CourierCodes       []string                 `json:"courierCodes,omitempty"`
+	PaymentMode        PaymentMode              `json:"paymentMode"`
+	Dimensions         []*PackageDimensionInput `json:"dimensions,omitempty"`
+}
+
+type PaymentMode string
+
+const (
+	PaymentModeCod     PaymentMode = "COD"
+	PaymentModePrepaid PaymentMode = "PREPAID"
+)
+
+var AllPaymentMode = []PaymentMode{
+	PaymentModeCod,
+	PaymentModePrepaid,
+}
+
+func (e PaymentMode) IsValid() bool {
+	switch e {
+	case PaymentModeCod, PaymentModePrepaid:
+		return true
+	}
+	return false
+}
+
+func (e PaymentMode) String() string {
+	return string(e)
+}
+
+func (e *PaymentMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PaymentMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PaymentMode", str)
+	}
+	return nil
+}
+
+func (e PaymentMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

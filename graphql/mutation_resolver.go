@@ -90,3 +90,37 @@ func (r *mutationResolver) SyncOrders(ctx context.Context, accountId string) (*m
         ShopResults:   shopDetailsSlice,
     }, nil
 }
+
+
+
+func (r *mutationResolver) CalculateShippingRates(ctx context.Context, input ShippingRateInput) (*models.ShippingRateResponse, error) {
+    // Convert the generated ShippingRateInput to models.ShippingRateInput if needed
+    modelInput := models.ShippingRateInput{
+        OriginPincode:      input.OriginPincode,
+        DestinationPincode: input.DestinationPincode,
+        Weight:             input.Weight,
+        CourierCodes:       input.CourierCodes,
+        PaymentMode:        models.PaymentMode(input.PaymentMode),
+        Dimensions:         make([]models.PackageDimensionInput, len(input.Dimensions)),
+    }
+
+    // Convert dimensions
+    for i, dim := range input.Dimensions {
+        modelInput.Dimensions[i] = models.PackageDimensionInput{
+            Length: dim.Length,
+            Width:  dim.Width,
+            Height: dim.Height,
+            Weight: dim.Weight,
+        }
+    }
+
+    return r.server.Shipping().CalculateShippingRates(ctx, modelInput)
+}
+func (r *mutationResolver) GetAvailableCouriers(ctx context.Context, input AvailabilityInput) (*models.CourierAvailabilityResponse, error) {
+    modelInput := models.AvailabilityInput{
+        OriginPincode:      input.OriginPincode,
+        DestinationPincode: input.DestinationPincode,
+    }
+    return r.server.Shipping().GetAvailableCouriers(ctx, modelInput)
+}
+
