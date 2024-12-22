@@ -1,7 +1,12 @@
 package config
 
+import (
+	"os"
+	"strconv"
+)
+
 type Config struct {
-    GRPCPort     string
+    GRPCPort      string
     CourierConfig map[string]*CourierConfig
 }
 
@@ -17,14 +22,14 @@ func NewConfig() *Config {
         GRPCPort: ":50051",
         CourierConfig: map[string]*CourierConfig{
             "DELHIVERY": {
-                BaseURL:   "https://staging-express.delhivery.com",
-                RateLimit: 40,
-                ApiKey:    "your-delhivery-api-key",
+                BaseURL:   getEnvWithDefault("DELHIVERY_BASE_URL", "https://staging-express.delhivery.com"),
+                RateLimit: getEnvAsIntWithDefault("DELHIVERY_RATE_LIMIT", 40),
+                ApiKey:    getEnvWithDefault("DELHIVERY_API_KEY", ""),
             },
             "BLUEDART": {
-                BaseURL:   "https://api.bluedart.com",
-                RateLimit: 30,
-                ApiKey:    "your-bluedart-api-key",
+                BaseURL:   getEnvWithDefault("BLUEDART_BASE_URL", "https://api.bluedart.com"),
+                RateLimit: getEnvAsIntWithDefault("BLUEDART_RATE_LIMIT", 30),
+                ApiKey:    getEnvWithDefault("BLUEDART_API_KEY", ""),
             },
         },
     }
@@ -35,4 +40,20 @@ func (c *Config) GetRateLimit(courierCode string) int {
         return config.RateLimit
     }
     return 30 // default rate limit
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+    if value := os.Getenv(key); value != "" {
+        return value
+    }
+    return defaultValue
+}
+
+func getEnvAsIntWithDefault(key string, defaultValue int) int {
+    if value := os.Getenv(key); value != "" {
+        if intValue, err := strconv.Atoi(value); err == nil {
+            return intValue
+        }
+    }
+    return defaultValue
 }

@@ -20,6 +20,11 @@ type Accounts struct {
 	Orders []*models.Order `json:"orders"`
 }
 
+type AvailabilityInput struct {
+	OriginPincode      int `json:"originPincode"`
+	DestinationPincode int `json:"destinationPincode"`
+}
+
 type Customer struct {
 	ID        *string `json:"id,omitempty"`
 	Email     *string `json:"email,omitempty"`
@@ -90,6 +95,13 @@ type OrderSort struct {
 	Direction SortDirection  `json:"direction"`
 }
 
+type PackageDimensionInput struct {
+	Length float64 `json:"length"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+	Weight float64 `json:"weight"`
+}
+
 type PageInfo struct {
 	HasNextPage     bool    `json:"hasNextPage"`
 	HasPreviousPage bool    `json:"hasPreviousPage"`
@@ -110,6 +122,15 @@ type Query struct {
 type RechargeWalletInput struct {
 	AccountID string  `json:"accountId"`
 	Amount    float64 `json:"amount"`
+}
+
+type ShippingRateInput struct {
+	OriginPincode      int                      `json:"originPincode"`
+	DestinationPincode int                      `json:"destinationPincode"`
+	Weight             int                      `json:"weight"`
+	CourierCodes       []string                 `json:"courierCodes,omitempty"`
+	PaymentMode        PaymentMode              `json:"paymentMode"`
+	Dimensions         []*PackageDimensionInput `json:"dimensions,omitempty"`
 }
 
 type WalletDetails struct {
@@ -172,6 +193,47 @@ func (e *OrderSortField) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderSortField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PaymentMode string
+
+const (
+	PaymentModeCod     PaymentMode = "COD"
+	PaymentModePrepaid PaymentMode = "PREPAID"
+)
+
+var AllPaymentMode = []PaymentMode{
+	PaymentModeCod,
+	PaymentModePrepaid,
+}
+
+func (e PaymentMode) IsValid() bool {
+	switch e {
+	case PaymentModeCod, PaymentModePrepaid:
+		return true
+	}
+	return false
+}
+
+func (e PaymentMode) String() string {
+	return string(e)
+}
+
+func (e *PaymentMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PaymentMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PaymentMode", str)
+	}
+	return nil
+}
+
+func (e PaymentMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -62,6 +62,26 @@ type ComplexityRoot struct {
 		Orders func(childComplexity int, pagination PaginationInput) int
 	}
 
+	CourierAvailabilityResponse struct {
+		AvailableCouriers func(childComplexity int) int
+		Error             func(childComplexity int) int
+		Success           func(childComplexity int) int
+	}
+
+	CourierInfo struct {
+		CourierCode       func(childComplexity int) int
+		CourierName       func(childComplexity int) int
+		SupportedServices func(childComplexity int) int
+	}
+
+	CourierRate struct {
+		CourierCode   func(childComplexity int) int
+		CourierName   func(childComplexity int) int
+		EstimatedDays func(childComplexity int) int
+		RateDetails   func(childComplexity int) int
+		ServiceType   func(childComplexity int) int
+	}
+
 	Customer struct {
 		Email     func(childComplexity int) int
 		FirstName func(childComplexity int) int
@@ -76,12 +96,14 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateAccount       func(childComplexity int, account AccountInput) int
-		DeductBalance       func(childComplexity int, input DeductBalanceInput) int
-		ExchangeAccessToken func(childComplexity int, shopName string, code string, accountID string) int
-		IntegrateShop       func(childComplexity int, shopName string) int
-		RechargeWallet      func(childComplexity int, input RechargeWalletInput) int
-		SyncOrders          func(childComplexity int, accountID string) int
+		CalculateShippingRates func(childComplexity int, input ShippingRateInput) int
+		CreateAccount          func(childComplexity int, account AccountInput) int
+		DeductBalance          func(childComplexity int, input DeductBalanceInput) int
+		ExchangeAccessToken    func(childComplexity int, shopName string, code string, accountID string) int
+		GetAvailableCouriers   func(childComplexity int, input AvailabilityInput) int
+		IntegrateShop          func(childComplexity int, shopName string) int
+		RechargeWallet         func(childComplexity int, input RechargeWalletInput) int
+		SyncOrders             func(childComplexity int, accountID string) int
 	}
 
 	Order struct {
@@ -143,6 +165,20 @@ type ComplexityRoot struct {
 		GetWalletDetails    func(childComplexity int, input GetWalletDetailsInput) int
 	}
 
+	RateDetails struct {
+		CodCharges    func(childComplexity int) int
+		FuelSurcharge func(childComplexity int) int
+		GrossAmount   func(childComplexity int) int
+		TaxAmount     func(childComplexity int) int
+		TotalAmount   func(childComplexity int) int
+	}
+
+	ShippingRateResponse struct {
+		Error   func(childComplexity int) int
+		Rates   func(childComplexity int) int
+		Success func(childComplexity int) int
+	}
+
 	ShopName struct {
 		Shopname func(childComplexity int) int
 	}
@@ -193,6 +229,8 @@ type MutationResolver interface {
 	SyncOrders(ctx context.Context, accountID string) (*models.SyncOrdersResult, error)
 	RechargeWallet(ctx context.Context, input RechargeWalletInput) (*WalletOperationResponse, error)
 	DeductBalance(ctx context.Context, input DeductBalanceInput) (*WalletOperationResponse, error)
+	CalculateShippingRates(ctx context.Context, input ShippingRateInput) (*models.ShippingRateResponse, error)
+	GetAvailableCouriers(ctx context.Context, input AvailabilityInput) (*models.CourierAvailabilityResponse, error)
 }
 type OrderResolver interface {
 	CreatedAt(ctx context.Context, obj *models.Order) (string, error)
@@ -284,6 +322,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Accounts.Orders(childComplexity, args["pagination"].(PaginationInput)), true
 
+	case "CourierAvailabilityResponse.availableCouriers":
+		if e.complexity.CourierAvailabilityResponse.AvailableCouriers == nil {
+			break
+		}
+
+		return e.complexity.CourierAvailabilityResponse.AvailableCouriers(childComplexity), true
+
+	case "CourierAvailabilityResponse.error":
+		if e.complexity.CourierAvailabilityResponse.Error == nil {
+			break
+		}
+
+		return e.complexity.CourierAvailabilityResponse.Error(childComplexity), true
+
+	case "CourierAvailabilityResponse.success":
+		if e.complexity.CourierAvailabilityResponse.Success == nil {
+			break
+		}
+
+		return e.complexity.CourierAvailabilityResponse.Success(childComplexity), true
+
+	case "CourierInfo.courierCode":
+		if e.complexity.CourierInfo.CourierCode == nil {
+			break
+		}
+
+		return e.complexity.CourierInfo.CourierCode(childComplexity), true
+
+	case "CourierInfo.courierName":
+		if e.complexity.CourierInfo.CourierName == nil {
+			break
+		}
+
+		return e.complexity.CourierInfo.CourierName(childComplexity), true
+
+	case "CourierInfo.supportedServices":
+		if e.complexity.CourierInfo.SupportedServices == nil {
+			break
+		}
+
+		return e.complexity.CourierInfo.SupportedServices(childComplexity), true
+
+	case "CourierRate.courierCode":
+		if e.complexity.CourierRate.CourierCode == nil {
+			break
+		}
+
+		return e.complexity.CourierRate.CourierCode(childComplexity), true
+
+	case "CourierRate.courierName":
+		if e.complexity.CourierRate.CourierName == nil {
+			break
+		}
+
+		return e.complexity.CourierRate.CourierName(childComplexity), true
+
+	case "CourierRate.estimatedDays":
+		if e.complexity.CourierRate.EstimatedDays == nil {
+			break
+		}
+
+		return e.complexity.CourierRate.EstimatedDays(childComplexity), true
+
+	case "CourierRate.rateDetails":
+		if e.complexity.CourierRate.RateDetails == nil {
+			break
+		}
+
+		return e.complexity.CourierRate.RateDetails(childComplexity), true
+
+	case "CourierRate.serviceType":
+		if e.complexity.CourierRate.ServiceType == nil {
+			break
+		}
+
+		return e.complexity.CourierRate.ServiceType(childComplexity), true
+
 	case "Customer.email":
 		if e.complexity.Customer.Email == nil {
 			break
@@ -333,6 +448,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Error.Message(childComplexity), true
 
+	case "Mutation.calculateShippingRates":
+		if e.complexity.Mutation.CalculateShippingRates == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_calculateShippingRates_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CalculateShippingRates(childComplexity, args["input"].(ShippingRateInput)), true
+
 	case "Mutation.createAccount":
 		if e.complexity.Mutation.CreateAccount == nil {
 			break
@@ -368,6 +495,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ExchangeAccessToken(childComplexity, args["shopName"].(string), args["code"].(string), args["accountId"].(string)), true
+
+	case "Mutation.getAvailableCouriers":
+		if e.complexity.Mutation.GetAvailableCouriers == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_getAvailableCouriers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GetAvailableCouriers(childComplexity, args["input"].(AvailabilityInput)), true
 
 	case "Mutation.integrateShop":
 		if e.complexity.Mutation.IntegrateShop == nil {
@@ -717,6 +856,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetWalletDetails(childComplexity, args["input"].(GetWalletDetailsInput)), true
 
+	case "RateDetails.codCharges":
+		if e.complexity.RateDetails.CodCharges == nil {
+			break
+		}
+
+		return e.complexity.RateDetails.CodCharges(childComplexity), true
+
+	case "RateDetails.fuelSurcharge":
+		if e.complexity.RateDetails.FuelSurcharge == nil {
+			break
+		}
+
+		return e.complexity.RateDetails.FuelSurcharge(childComplexity), true
+
+	case "RateDetails.grossAmount":
+		if e.complexity.RateDetails.GrossAmount == nil {
+			break
+		}
+
+		return e.complexity.RateDetails.GrossAmount(childComplexity), true
+
+	case "RateDetails.taxAmount":
+		if e.complexity.RateDetails.TaxAmount == nil {
+			break
+		}
+
+		return e.complexity.RateDetails.TaxAmount(childComplexity), true
+
+	case "RateDetails.totalAmount":
+		if e.complexity.RateDetails.TotalAmount == nil {
+			break
+		}
+
+		return e.complexity.RateDetails.TotalAmount(childComplexity), true
+
+	case "ShippingRateResponse.error":
+		if e.complexity.ShippingRateResponse.Error == nil {
+			break
+		}
+
+		return e.complexity.ShippingRateResponse.Error(childComplexity), true
+
+	case "ShippingRateResponse.rates":
+		if e.complexity.ShippingRateResponse.Rates == nil {
+			break
+		}
+
+		return e.complexity.ShippingRateResponse.Rates(childComplexity), true
+
+	case "ShippingRateResponse.success":
+		if e.complexity.ShippingRateResponse.Success == nil {
+			break
+		}
+
+		return e.complexity.ShippingRateResponse.Success(childComplexity), true
+
 	case "ShopName.shopname":
 		if e.complexity.ShopName.Shopname == nil {
 			break
@@ -852,6 +1047,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputAccountInput,
+		ec.unmarshalInputAvailabilityInput,
 		ec.unmarshalInputDeductBalanceInput,
 		ec.unmarshalInputGetWalletDetailsInput,
 		ec.unmarshalInputOrderFilter,
@@ -859,8 +1055,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputOrderLineItemInput,
 		ec.unmarshalInputOrderPaginationInput,
 		ec.unmarshalInputOrderSort,
+		ec.unmarshalInputPackageDimensionInput,
 		ec.unmarshalInputPaginationInput,
 		ec.unmarshalInputRechargeWalletInput,
+		ec.unmarshalInputShippingRateInput,
 	)
 	first := true
 
@@ -1006,6 +1204,38 @@ func (ec *executionContext) field_Accounts_orders_argsPagination(
 	}
 
 	var zeroVal PaginationInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_calculateShippingRates_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.field_Mutation_calculateShippingRates_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_calculateShippingRates_argsInput(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (ShippingRateInput, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["input"]
+	if !ok {
+		var zeroVal ShippingRateInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNShippingRateInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐShippingRateInput(ctx, tmp)
+	}
+
+	var zeroVal ShippingRateInput
 	return zeroVal, nil
 }
 
@@ -1156,6 +1386,38 @@ func (ec *executionContext) field_Mutation_exchangeAccessToken_argsAccountID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_getAvailableCouriers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.field_Mutation_getAvailableCouriers_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_getAvailableCouriers_argsInput(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (AvailabilityInput, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["input"]
+	if !ok {
+		var zeroVal AvailabilityInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNAvailabilityInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐAvailabilityInput(ctx, tmp)
+	}
+
+	var zeroVal AvailabilityInput
 	return zeroVal, nil
 }
 
@@ -1988,6 +2250,507 @@ func (ec *executionContext) fieldContext_Accounts_orders(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _CourierAvailabilityResponse_success(ctx context.Context, field graphql.CollectedField, obj *models.CourierAvailabilityResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierAvailabilityResponse_success(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierAvailabilityResponse_success(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierAvailabilityResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierAvailabilityResponse_availableCouriers(ctx context.Context, field graphql.CollectedField, obj *models.CourierAvailabilityResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierAvailabilityResponse_availableCouriers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvailableCouriers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.CourierInfo)
+	fc.Result = res
+	return ec.marshalNCourierInfo2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierAvailabilityResponse_availableCouriers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierAvailabilityResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "courierCode":
+				return ec.fieldContext_CourierInfo_courierCode(ctx, field)
+			case "courierName":
+				return ec.fieldContext_CourierInfo_courierName(ctx, field)
+			case "supportedServices":
+				return ec.fieldContext_CourierInfo_supportedServices(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CourierInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierAvailabilityResponse_error(ctx context.Context, field graphql.CollectedField, obj *models.CourierAvailabilityResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierAvailabilityResponse_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierAvailabilityResponse_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierAvailabilityResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierInfo_courierCode(ctx context.Context, field graphql.CollectedField, obj *models.CourierInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierInfo_courierCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CourierCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierInfo_courierCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierInfo_courierName(ctx context.Context, field graphql.CollectedField, obj *models.CourierInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierInfo_courierName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CourierName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierInfo_courierName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierInfo_supportedServices(ctx context.Context, field graphql.CollectedField, obj *models.CourierInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierInfo_supportedServices(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SupportedServices, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierInfo_supportedServices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierRate_courierCode(ctx context.Context, field graphql.CollectedField, obj *models.CourierRate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierRate_courierCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CourierCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierRate_courierCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierRate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierRate_courierName(ctx context.Context, field graphql.CollectedField, obj *models.CourierRate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierRate_courierName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CourierName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierRate_courierName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierRate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierRate_serviceType(ctx context.Context, field graphql.CollectedField, obj *models.CourierRate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierRate_serviceType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServiceType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierRate_serviceType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierRate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierRate_rateDetails(ctx context.Context, field graphql.CollectedField, obj *models.CourierRate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierRate_rateDetails(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RateDetails, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.RateDetails)
+	fc.Result = res
+	return ec.marshalNRateDetails2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐRateDetails(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierRate_rateDetails(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierRate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalAmount":
+				return ec.fieldContext_RateDetails_totalAmount(ctx, field)
+			case "grossAmount":
+				return ec.fieldContext_RateDetails_grossAmount(ctx, field)
+			case "taxAmount":
+				return ec.fieldContext_RateDetails_taxAmount(ctx, field)
+			case "codCharges":
+				return ec.fieldContext_RateDetails_codCharges(ctx, field)
+			case "fuelSurcharge":
+				return ec.fieldContext_RateDetails_fuelSurcharge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RateDetails", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CourierRate_estimatedDays(ctx context.Context, field graphql.CollectedField, obj *models.CourierRate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CourierRate_estimatedDays(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EstimatedDays, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CourierRate_estimatedDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CourierRate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Customer_id(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Customer_id(ctx, field)
 	if err != nil {
@@ -2639,6 +3402,132 @@ func (ec *executionContext) fieldContext_Mutation_deductBalance(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deductBalance_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_calculateShippingRates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_calculateShippingRates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CalculateShippingRates(rctx, fc.Args["input"].(ShippingRateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.ShippingRateResponse)
+	fc.Result = res
+	return ec.marshalNShippingRateResponse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐShippingRateResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_calculateShippingRates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_ShippingRateResponse_success(ctx, field)
+			case "rates":
+				return ec.fieldContext_ShippingRateResponse_rates(ctx, field)
+			case "error":
+				return ec.fieldContext_ShippingRateResponse_error(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ShippingRateResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_calculateShippingRates_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_getAvailableCouriers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_getAvailableCouriers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GetAvailableCouriers(rctx, fc.Args["input"].(AvailabilityInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.CourierAvailabilityResponse)
+	fc.Result = res
+	return ec.marshalNCourierAvailabilityResponse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierAvailabilityResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_getAvailableCouriers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "success":
+				return ec.fieldContext_CourierAvailabilityResponse_success(ctx, field)
+			case "availableCouriers":
+				return ec.fieldContext_CourierAvailabilityResponse_availableCouriers(ctx, field)
+			case "error":
+				return ec.fieldContext_CourierAvailabilityResponse_error(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CourierAvailabilityResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_getAvailableCouriers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4760,6 +5649,364 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RateDetails_totalAmount(ctx context.Context, field graphql.CollectedField, obj *models.RateDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RateDetails_totalAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RateDetails_totalAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RateDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RateDetails_grossAmount(ctx context.Context, field graphql.CollectedField, obj *models.RateDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RateDetails_grossAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GrossAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RateDetails_grossAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RateDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RateDetails_taxAmount(ctx context.Context, field graphql.CollectedField, obj *models.RateDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RateDetails_taxAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TaxAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RateDetails_taxAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RateDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RateDetails_codCharges(ctx context.Context, field graphql.CollectedField, obj *models.RateDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RateDetails_codCharges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CodCharges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RateDetails_codCharges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RateDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RateDetails_fuelSurcharge(ctx context.Context, field graphql.CollectedField, obj *models.RateDetails) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RateDetails_fuelSurcharge(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FuelSurcharge, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RateDetails_fuelSurcharge(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RateDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ShippingRateResponse_success(ctx context.Context, field graphql.CollectedField, obj *models.ShippingRateResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ShippingRateResponse_success(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ShippingRateResponse_success(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ShippingRateResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ShippingRateResponse_rates(ctx context.Context, field graphql.CollectedField, obj *models.ShippingRateResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ShippingRateResponse_rates(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rates, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*models.CourierRate)
+	fc.Result = res
+	return ec.marshalOCourierRate2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierRateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ShippingRateResponse_rates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ShippingRateResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "courierCode":
+				return ec.fieldContext_CourierRate_courierCode(ctx, field)
+			case "courierName":
+				return ec.fieldContext_CourierRate_courierName(ctx, field)
+			case "serviceType":
+				return ec.fieldContext_CourierRate_serviceType(ctx, field)
+			case "rateDetails":
+				return ec.fieldContext_CourierRate_rateDetails(ctx, field)
+			case "estimatedDays":
+				return ec.fieldContext_CourierRate_estimatedDays(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CourierRate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ShippingRateResponse_error(ctx context.Context, field graphql.CollectedField, obj *models.ShippingRateResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ShippingRateResponse_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ShippingRateResponse_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ShippingRateResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7382,6 +8629,40 @@ func (ec *executionContext) unmarshalInputAccountInput(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputAvailabilityInput(ctx context.Context, obj interface{}) (AvailabilityInput, error) {
+	var it AvailabilityInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"originPincode", "destinationPincode"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "originPincode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("originPincode"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OriginPincode = data
+		case "destinationPincode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("destinationPincode"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DestinationPincode = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDeductBalanceInput(ctx context.Context, obj interface{}) (DeductBalanceInput, error) {
 	var it DeductBalanceInput
 	asMap := map[string]interface{}{}
@@ -7676,6 +8957,54 @@ func (ec *executionContext) unmarshalInputOrderSort(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPackageDimensionInput(ctx context.Context, obj interface{}) (PackageDimensionInput, error) {
+	var it PackageDimensionInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"length", "width", "height", "weight"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "length":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("length"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Length = data
+		case "width":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("width"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Width = data
+		case "height":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Height = data
+		case "weight":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weight"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Weight = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPaginationInput(ctx context.Context, obj interface{}) (PaginationInput, error) {
 	var it PaginationInput
 	asMap := map[string]interface{}{}
@@ -7738,6 +9067,68 @@ func (ec *executionContext) unmarshalInputRechargeWalletInput(ctx context.Contex
 				return it, err
 			}
 			it.Amount = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputShippingRateInput(ctx context.Context, obj interface{}) (ShippingRateInput, error) {
+	var it ShippingRateInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"originPincode", "destinationPincode", "weight", "courierCodes", "paymentMode", "dimensions"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "originPincode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("originPincode"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OriginPincode = data
+		case "destinationPincode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("destinationPincode"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DestinationPincode = data
+		case "weight":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weight"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Weight = data
+		case "courierCodes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courierCodes"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CourierCodes = data
+		case "paymentMode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentMode"))
+			data, err := ec.unmarshalNPaymentMode2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPaymentMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PaymentMode = data
+		case "dimensions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensions"))
+			data, err := ec.unmarshalOPackageDimensionInput2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPackageDimensionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Dimensions = data
 		}
 	}
 
@@ -7860,6 +9251,160 @@ func (ec *executionContext) _Accounts(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("Accounts")
 		case "orders":
 			out.Values[i] = ec._Accounts_orders(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var courierAvailabilityResponseImplementors = []string{"CourierAvailabilityResponse"}
+
+func (ec *executionContext) _CourierAvailabilityResponse(ctx context.Context, sel ast.SelectionSet, obj *models.CourierAvailabilityResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, courierAvailabilityResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CourierAvailabilityResponse")
+		case "success":
+			out.Values[i] = ec._CourierAvailabilityResponse_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "availableCouriers":
+			out.Values[i] = ec._CourierAvailabilityResponse_availableCouriers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "error":
+			out.Values[i] = ec._CourierAvailabilityResponse_error(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var courierInfoImplementors = []string{"CourierInfo"}
+
+func (ec *executionContext) _CourierInfo(ctx context.Context, sel ast.SelectionSet, obj *models.CourierInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, courierInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CourierInfo")
+		case "courierCode":
+			out.Values[i] = ec._CourierInfo_courierCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "courierName":
+			out.Values[i] = ec._CourierInfo_courierName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "supportedServices":
+			out.Values[i] = ec._CourierInfo_supportedServices(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var courierRateImplementors = []string{"CourierRate"}
+
+func (ec *executionContext) _CourierRate(ctx context.Context, sel ast.SelectionSet, obj *models.CourierRate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, courierRateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CourierRate")
+		case "courierCode":
+			out.Values[i] = ec._CourierRate_courierCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "courierName":
+			out.Values[i] = ec._CourierRate_courierName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serviceType":
+			out.Values[i] = ec._CourierRate_serviceType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rateDetails":
+			out.Values[i] = ec._CourierRate_rateDetails(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "estimatedDays":
+			out.Values[i] = ec._CourierRate_estimatedDays(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8031,6 +9576,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deductBalance":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deductBalance(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "calculateShippingRates":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_calculateShippingRates(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "getAvailableCouriers":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_getAvailableCouriers(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8689,6 +10248,108 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var rateDetailsImplementors = []string{"RateDetails"}
+
+func (ec *executionContext) _RateDetails(ctx context.Context, sel ast.SelectionSet, obj *models.RateDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rateDetailsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RateDetails")
+		case "totalAmount":
+			out.Values[i] = ec._RateDetails_totalAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "grossAmount":
+			out.Values[i] = ec._RateDetails_grossAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "taxAmount":
+			out.Values[i] = ec._RateDetails_taxAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "codCharges":
+			out.Values[i] = ec._RateDetails_codCharges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fuelSurcharge":
+			out.Values[i] = ec._RateDetails_fuelSurcharge(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var shippingRateResponseImplementors = []string{"ShippingRateResponse"}
+
+func (ec *executionContext) _ShippingRateResponse(ctx context.Context, sel ast.SelectionSet, obj *models.ShippingRateResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, shippingRateResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ShippingRateResponse")
+		case "success":
+			out.Values[i] = ec._ShippingRateResponse_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rates":
+			out.Values[i] = ec._ShippingRateResponse_rates(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._ShippingRateResponse_error(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9402,6 +11063,11 @@ func (ec *executionContext) unmarshalNAccountInput2githubᚗcomᚋShridhar2104�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNAvailabilityInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐAvailabilityInput(ctx context.Context, v interface{}) (AvailabilityInput, error) {
+	res, err := ec.unmarshalInputAvailabilityInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9415,6 +11081,84 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCourierAvailabilityResponse2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierAvailabilityResponse(ctx context.Context, sel ast.SelectionSet, v models.CourierAvailabilityResponse) graphql.Marshaler {
+	return ec._CourierAvailabilityResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCourierAvailabilityResponse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierAvailabilityResponse(ctx context.Context, sel ast.SelectionSet, v *models.CourierAvailabilityResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CourierAvailabilityResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCourierInfo2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.CourierInfo) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCourierInfo2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCourierInfo2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierInfo(ctx context.Context, sel ast.SelectionSet, v *models.CourierInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CourierInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCourierRate2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierRate(ctx context.Context, sel ast.SelectionSet, v *models.CourierRate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CourierRate(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNDateTime2string(ctx context.Context, v interface{}) (string, error) {
@@ -9705,6 +11449,11 @@ func (ec *executionContext) marshalNOrderSortField2githubᚗcomᚋShridhar2104�
 	return v
 }
 
+func (ec *executionContext) unmarshalNPackageDimensionInput2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPackageDimensionInput(ctx context.Context, v interface{}) (*PackageDimensionInput, error) {
+	res, err := ec.unmarshalInputPackageDimensionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9720,9 +11469,48 @@ func (ec *executionContext) unmarshalNPaginationInput2githubᚗcomᚋShridhar210
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNPaymentMode2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPaymentMode(ctx context.Context, v interface{}) (PaymentMode, error) {
+	var res PaymentMode
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPaymentMode2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPaymentMode(ctx context.Context, sel ast.SelectionSet, v PaymentMode) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNRateDetails2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐRateDetails(ctx context.Context, sel ast.SelectionSet, v *models.RateDetails) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RateDetails(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNRechargeWalletInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐRechargeWalletInput(ctx context.Context, v interface{}) (RechargeWalletInput, error) {
 	res, err := ec.unmarshalInputRechargeWalletInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNShippingRateInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐShippingRateInput(ctx context.Context, v interface{}) (ShippingRateInput, error) {
+	res, err := ec.unmarshalInputShippingRateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNShippingRateResponse2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐShippingRateResponse(ctx context.Context, sel ast.SelectionSet, v models.ShippingRateResponse) graphql.Marshaler {
+	return ec._ShippingRateResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNShippingRateResponse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐShippingRateResponse(ctx context.Context, sel ast.SelectionSet, v *models.ShippingRateResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ShippingRateResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNShopName2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐShopName(ctx context.Context, sel ast.SelectionSet, v models.ShopName) graphql.Marshaler {
@@ -9860,6 +11648,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNSyncOrdersResult2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐSyncOrdersResult(ctx context.Context, sel ast.SelectionSet, v models.SyncOrdersResult) graphql.Marshaler {
@@ -10183,6 +12003,53 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOCourierRate2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierRateᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.CourierRate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCourierRate2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚋmodelsᚐCourierRate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOCustomer2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐCustomer(ctx context.Context, sel ast.SelectionSet, v *Customer) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -10316,6 +12183,26 @@ func (ec *executionContext) unmarshalOOrderSort2ᚖgithubᚗcomᚋShridhar2104�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOPackageDimensionInput2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPackageDimensionInputᚄ(ctx context.Context, v interface{}) ([]*PackageDimensionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*PackageDimensionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPackageDimensionInput2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐPackageDimensionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10324,6 +12211,44 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

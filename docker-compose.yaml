@@ -1,4 +1,12 @@
 version: '3.8'
+x-common-variables: &common-variables
+  DELHIVERY_API_KEY: ${DELHIVERY_API_KEY}
+  DELHIVERY_BASE_URL: ${DELHIVERY_BASE_URL}
+  DELHIVERY_RATE_LIMIT: ${DELHIVERY_RATE_LIMIT:-40}
+  BLUEDART_API_KEY: ${BLUEDART_API_KEY}
+  BLUEDART_BASE_URL: ${BLUEDART_BASE_URL}
+  BLUEDART_RATE_LIMIT: ${BLUEDART_RATE_LIMIT:-30}
+
 
 services:
   shopify-db:
@@ -14,7 +22,6 @@ services:
     networks:
       - logilo-network
     restart: always
-
   shopify-service:
     build:
       context: .  # Path to your service's Go code
@@ -27,6 +34,23 @@ services:
       - "8080:8080"  # Adjust if your service runs on different ports
     env_file:
       - .env.development 
+
+    
+  shipment-service:
+    build:
+      context: .
+      dockerfile: ./shipment/app.dockerfile
+    environment:
+      <<: *common-variables
+    env_file:
+      - .env.development
+    networks:
+      - logilo-network
+    ports:
+      - "50052:50052"
+    restart: on-failure
+
+
 
   account-db:
     build: 
@@ -93,9 +117,10 @@ services:
       context: .  # Path to your service's Go code
       dockerfile: ./graphql/app.dockerfile
     environment:
-      ACCOUNT_URL: account-service:8081
-      SHOPIFY_URL: shopify-service:8080
-      PAYMENT_URL: payment-service:50051
+      - ACCOUNT_URL= account-service:8081
+      - SHOPIFY_URL= shopify-service:8080
+      - PAYMENT_URL= payment-service:50051
+      - SHIPMENT_URL=shipment-service:50052
     networks:
       - logilo-network
     ports:
@@ -106,6 +131,8 @@ services:
     depends_on:
       - shopify-service
       - account-service
+      - payment-service
+      - shipment-service
 
 volumes:
   shopify_postgres_data:

@@ -13,6 +13,7 @@ type AppConfig struct {
 	AccountURL string `envconfig:"ACCOUNT_URL" required:"true"`
 	ShopifyURL string `envconfig:"SHOPIFY_URL" required:"true"`
 	PaymentURL string `envconfig:"PAYMENT_URL" required:"true"`
+	ShipmentURL string `envconfig:"SHIPMENT_URL" required:"true"`
 	Port       string `envconfig:"PORT" default:"8084"`
 }
 
@@ -41,26 +42,27 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
-	// Load configuration from environment variables
-	var config AppConfig
-	if err := envconfig.Process("", &config); err != nil {
-		log.Fatalf("Failed to parse environment variables: %v", err)
-	}
+    var config AppConfig
+    if err := envconfig.Process("", &config); err != nil {
+        log.Fatalf("Failed to parse environment variables: %v", err)
+    }
 
 	// Create a new GraphQL server
-	server, err := NewGraphQLServer(config.AccountURL, config.ShopifyURL, config.PaymentURL)
+	server, err := NewGraphQLServer(config.AccountURL, config.ShopifyURL, config.ShipmentURL, config.PaymentURL)
 	if err != nil {
 		log.Fatalf("Failed to create GraphQL server: %v", err)
 	}
+  
+    if err != nil {
+        log.Fatalf("Failed to create GraphQL server: %v", err)
+    }
 
-	// Set up HTTP routes
-	http.Handle("/graphql", corsMiddleware(handler.GraphQL(server.ToNewExecutableSchema())))
-	http.Handle("/playground", corsMiddleware(playground.Handler("GraphQL Playground", "/graphql")))
-	http.Handle("/health", corsMiddleware(http.HandlerFunc(healthHandler)))
+    http.Handle("/graphql", corsMiddleware(handler.GraphQL(server.ToNewExecutableSchema())))
+    http.Handle("/playground", corsMiddleware(playground.Handler("GraphQL Playground", "/graphql")))
+    http.Handle("/health", corsMiddleware(http.HandlerFunc(healthHandler)))
 
-	// Start the server
-	log.Printf("Starting server on port %s...", config.Port)
-	if err := http.ListenAndServe(":"+config.Port, nil); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+    log.Printf("Starting server on port %s...", config.Port)
+    if err := http.ListenAndServe(":"+config.Port, nil); err != nil {
+        log.Fatalf("Server failed to start: %v", err)
+    }
 }
