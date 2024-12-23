@@ -91,12 +91,62 @@ type SyncOrdersResult {
     message: String
     shopResults: [ShopSyncDetails!]!
 }
+type WalletDetails {
+  # Add wallet detail fields here based on your pb.WalletDetailsResponse
+  accountId: ID!
+  balance: Float
+  currency: String
+  status: WalletStatus
+  lastUpdated: DateTime
+}
+
+type Error {
+  
+  code: String!
+ 
+  message: String!
+}
+
+enum WalletStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+type WalletOperationResponse {
+  
+  newBalance: Float!
+ 
+  errors: [Error!]
+}
+
+type WalletDetailsResponse {
+ 
+  walletDetails: WalletDetails
+  
+  errors: [Error!]
+}
+
+input RechargeWalletInput {
+  accountId: ID!
+  amount: Float!
+}
+
+input DeductBalanceInput {
+  accountId: ID!
+  amount: Float!
+  orderId: ID!
+}
 
 input OrderPaginationInput {
     page: Int
     pageSize: Int
     filter: OrderFilter
     sort: OrderSort
+}
+input GetWalletDetailsInput {
+  accountId: ID!
 }
 
 
@@ -156,6 +206,8 @@ type Mutation {
     integrateShop(shopName: String!): String!
     exchangeAccessToken(shopName: String!, code: String!, accountId: String!): Boolean!
     syncOrders(accountId: String!): SyncOrdersResult!  
+    rechargeWallet(input: RechargeWalletInput!): WalletOperationResponse!
+    deductBalance(input: DeductBalanceInput!): WalletOperationResponse!
 
 }
 
@@ -164,6 +216,7 @@ type Query {
     accounts(pagination: PaginationInput!): [Account!]!
     getOrdersForAccount(accountId: String!, pagination: OrderPaginationInput): OrderConnection!
     getOrder(id: String!): Order
+    getWalletDetails(input: GetWalletDetailsInput!): WalletDetailsResponse!
 } 
 
 type Accounts {

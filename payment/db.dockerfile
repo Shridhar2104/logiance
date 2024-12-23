@@ -1,5 +1,5 @@
 # Use the official PostgreSQL image
-FROM postgres:15-alpine
+FROM postgres:16.1
 
 # Set environment variables for default database, user, and password
 ENV POSTGRES_DB=payment_service_db

@@ -12,6 +12,7 @@ import (
 type AppConfig struct {
 	AccountURL string `envconfig:"ACCOUNT_URL" required:"true"`
 	ShopifyURL string `envconfig:"SHOPIFY_URL" required:"true"`
+	PaymentURL string `envconfig:"PAYMENT_URL" required:"true"`
 	Port       string `envconfig:"PORT" default:"8084"`
 }
 
@@ -47,7 +48,7 @@ func main() {
 	}
 
 	// Create a new GraphQL server
-	server, err := NewGraphQLServer(config.AccountURL, config.ShopifyURL)
+	server, err := NewGraphQLServer(config.AccountURL, config.ShopifyURL, config.PaymentURL)
 	if err != nil {
 		log.Fatalf("Failed to create GraphQL server: %v", err)
 	}
