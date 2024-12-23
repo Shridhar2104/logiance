@@ -28,6 +28,21 @@ type Customer struct {
 	Phone     *string `json:"phone,omitempty"`
 }
 
+type DeductBalanceInput struct {
+	AccountID string  `json:"accountId"`
+	Amount    float64 `json:"amount"`
+	OrderID   string  `json:"orderId"`
+}
+
+type Error struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type GetWalletDetailsInput struct {
+	AccountID string `json:"accountId"`
+}
+
 type Mutation struct {
 }
 
@@ -90,6 +105,29 @@ type PaginationInput struct {
 }
 
 type Query struct {
+}
+
+type RechargeWalletInput struct {
+	AccountID string  `json:"accountId"`
+	Amount    float64 `json:"amount"`
+}
+
+type WalletDetails struct {
+	AccountID   string        `json:"accountId"`
+	Balance     *float64      `json:"balance,omitempty"`
+	Currency    *string       `json:"currency,omitempty"`
+	Status      *WalletStatus `json:"status,omitempty"`
+	LastUpdated *string       `json:"lastUpdated,omitempty"`
+}
+
+type WalletDetailsResponse struct {
+	WalletDetails *WalletDetails `json:"walletDetails,omitempty"`
+	Errors        []*Error       `json:"errors,omitempty"`
+}
+
+type WalletOperationResponse struct {
+	NewBalance float64  `json:"newBalance"`
+	Errors     []*Error `json:"errors,omitempty"`
 }
 
 type OrderSortField string
@@ -175,5 +213,50 @@ func (e *SortDirection) UnmarshalGQL(v interface{}) error {
 }
 
 func (e SortDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type WalletStatus string
+
+const (
+	WalletStatusActive    WalletStatus = "ACTIVE"
+	WalletStatusInactive  WalletStatus = "INACTIVE"
+	WalletStatusSuspended WalletStatus = "SUSPENDED"
+	WalletStatusClosed    WalletStatus = "CLOSED"
+)
+
+var AllWalletStatus = []WalletStatus{
+	WalletStatusActive,
+	WalletStatusInactive,
+	WalletStatusSuspended,
+	WalletStatusClosed,
+}
+
+func (e WalletStatus) IsValid() bool {
+	switch e {
+	case WalletStatusActive, WalletStatusInactive, WalletStatusSuspended, WalletStatusClosed:
+		return true
+	}
+	return false
+}
+
+func (e WalletStatus) String() string {
+	return string(e)
+}
+
+func (e *WalletStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WalletStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WalletStatus", str)
+	}
+	return nil
+}
+
+func (e WalletStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

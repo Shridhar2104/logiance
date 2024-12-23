@@ -143,3 +143,54 @@ type SyncOrdersResult struct {
     Message        string            `json:"message,omitempty"`
     ShopResults    []*ShopSyncDetails `json:"shopResults"`
 }
+
+
+
+type WalletStatus string
+
+const (
+    WalletStatusActive    WalletStatus = "ACTIVE"
+    WalletStatusInactive  WalletStatus = "INACTIVE"
+    WalletStatusSuspended WalletStatus = "SUSPENDED"
+    WalletStatusClosed    WalletStatus = "CLOSED"
+)
+
+type WalletDetails struct {
+    AccountID    string       `json:"accountId"`
+    Balance      float64      `json:"balance"`
+    Currency     string       `json:"currency"`
+    Status       WalletStatus `json:"status"`
+    LastUpdated  time.Time    `json:"lastUpdated"`
+}
+
+type GetWalletDetailsInput struct {
+    AccountID string `json:"accountId"`
+}
+
+type WalletDetailsResponse struct {
+    WalletDetails *WalletDetails `json:"walletDetails"`
+    Errors        []*Error       `json:"errors"`
+}
+
+type Error struct {
+    Code    string `json:"code"`
+    Message string `json:"message"`
+}
+
+
+type RechargeWalletInput struct {
+    AccountID string  `json:"accountId"`
+    Amount    float64 `json:"amount"`
+}
+
+type DeductBalanceInput struct {
+    AccountID string  `json:"accountId"`
+    Amount    float64 `json:"amount"`
+    OrderID   string  `json:"orderId"`
+}
+
+
+type WalletOperationResponse struct {
+    NewBalance float64  `json:"newBalance"`
+    Errors     []*Error `json:"errors"`
+}

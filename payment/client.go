@@ -3,7 +3,7 @@ package payment
 import (
 	"context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	
 	"github.com/Shridhar2104/logilo/payment/pb"
 )
 
@@ -13,11 +13,12 @@ type Client struct {
 }
 
 // NewClient creates a new gRPC client for the Payment Service.
-func NewClient(grpcServerAddress string) (*Client, error) {
-	conn, err := grpc.Dial(grpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewClient(url string) (*Client, error) {
+	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
-		return nil, err
+		return nil, err // Return error if connection fails
 	}
+
 	client := pb.NewPaymentServiceClient(conn)
 	return &Client{
 		connection: conn,

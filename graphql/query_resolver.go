@@ -123,3 +123,26 @@ func (r *queryResolver) GetOrder(ctx context.Context, id string) (*models.Order,
         },
     }, nil
 }
+
+func (r *queryResolver) GetWalletDetails(ctx context.Context, input GetWalletDetailsInput) (*WalletDetailsResponse, error) {
+    // Call the wallet client
+    resp, err := r.server.paymentClient.GetWalletDetails(ctx, input.AccountID)
+    if err != nil {
+        return &WalletDetailsResponse{
+            WalletDetails: nil,
+            Errors: []*Error{{
+                Code:    "WALLET_DETAILS_ERROR",
+                Message: fmt.Sprintf("Failed to get wallet details: %v", err),
+            }},
+        }, nil
+    }
+
+    // Map the protobuf response to our GraphQL model
+    return &WalletDetailsResponse{
+        WalletDetails: &WalletDetails{
+            AccountID:    resp.AccountId,
+            Balance:      &resp.Balance,
+        },
+        Errors: nil,
+    }, nil
+}

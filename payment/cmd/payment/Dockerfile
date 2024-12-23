@@ -1,32 +1,32 @@
-# Build stage
-FROM golang:1.21-alpine AS builder
+# Stage 1: Build the Go binary
+FROM golang:1.23 AS builder
 
-# Add git and build tools
-RUN apk add --no-cache git build-base
+# Set the working directory inside the container
+WORKDIR /src
 
-# Set working directory
-WORKDIR /app
-
-# Copy the entire project
+# Copy the entire project (since it has dependencies between services)
 COPY . .
 
-# Build the application
-RUN cd cmd/payment && CGO_ENABLED=0 GOOS=linux go build -o payment-service
+# Download dependencies
+RUN go mod download
 
-# Final stage
-FROM alpine:latest
+# Build the payment service
+RUN CGO_ENABLED=0 GOOS=linux go build -o payment-service ./payment/cmd/payment
 
+# Stage 2: Run the application
+FROM gcr.io/distroless/base-debian11:latest
+
+# Set the working directory
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /app/cmd/payment/payment-service .
-COPY --from=builder /app/up.sql /app/migrations/
+# Copy the binary from the builder stage
+COPY --from=builder /src/payment-service .
 
-# Install postgresql-client for database operations
-RUN apk add --no-cache postgresql-client
+# Copy the SQL migration
+COPY payment/up.sql /app/migrations/
 
-# Expose HTTP and gRPC ports
+# Expose both HTTP and gRPC ports
 EXPOSE 8080 50051
 
-# Command to run the service
+# Command to run the application
 CMD ["./payment-service"]
