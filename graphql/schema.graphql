@@ -1,0 +1,224 @@
+scalar DateTime
+
+type Account {
+	id: String!
+	name: String!
+    password: String!
+    email: String!
+    orders: [Order!]!
+    shopnames:[ShopName!]!
+}
+
+type ShopName {
+    shopname: String!
+}
+
+type Order {
+    id: String!
+    name: String!
+    orderNumber: Int
+    amount: Float!
+    accountId: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    cancelledAt: DateTime
+    closedAt: DateTime
+    processedAt: DateTime
+    currency: String!
+    totalPrice: Float!
+    subtotalPrice: Float!
+    totalDiscounts: Float
+    totalTax: Float
+    taxesIncluded: Boolean
+    financialStatus: String
+    fulfillmentStatus: String
+    description: String
+    lineItems: [OrderLineItem!]!
+    customer: Customer
+    shopName: String!
+}
+
+type OrderLineItem {
+    id: String!
+    amount: Float!
+    description: String!
+}
+
+
+type Customer {
+    id: String
+    email: String
+    firstName: String
+    lastName: String
+    phone: String
+}
+
+# Pagination types
+type OrderConnection {
+    edges: [OrderEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type OrderEdge {
+    node: Order!
+    cursor: String!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+    totalPages: Int!
+    currentPage: Int!
+}
+
+
+type ShopSyncStatus {
+    success: Boolean!
+    errorMessage: String
+    ordersCount: Int!
+}
+
+type ShopSyncDetails {
+    shopName: String!
+    status: ShopSyncStatus!
+}
+
+type SyncOrdersResult {
+    overallSuccess: Boolean!
+    message: String
+    shopResults: [ShopSyncDetails!]!
+}
+type WalletDetails {
+  # Add wallet detail fields here based on your pb.WalletDetailsResponse
+  accountId: ID!
+  balance: Float
+  currency: String
+  status: WalletStatus
+  lastUpdated: DateTime
+}
+
+type Error {
+  
+  code: String!
+ 
+  message: String!
+}
+
+enum WalletStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+type WalletOperationResponse {
+  
+  newBalance: Float!
+ 
+  errors: [Error!]
+}
+
+type WalletDetailsResponse {
+ 
+  walletDetails: WalletDetails
+  
+  errors: [Error!]
+}
+
+input RechargeWalletInput {
+  accountId: ID!
+  amount: Float!
+}
+
+input DeductBalanceInput {
+  accountId: ID!
+  amount: Float!
+  orderId: ID!
+}
+
+input OrderPaginationInput {
+    page: Int
+    pageSize: Int
+    filter: OrderFilter
+    sort: OrderSort
+}
+input GetWalletDetailsInput {
+  accountId: ID!
+}
+
+
+input OrderFilter {
+    createdAtStart: DateTime
+    createdAtEnd: DateTime
+    financialStatus: String
+    fulfillmentStatus: String
+    minTotalPrice: Float
+    maxTotalPrice: Float
+    searchTerm: String
+}
+
+input OrderSort {
+    field: OrderSortField!
+    direction: SortDirection!
+}
+
+enum OrderSortField {
+    CREATED_AT
+    UPDATED_AT
+    ORDER_NUMBER
+    TOTAL_PRICE
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+
+input PaginationInput {
+    skip: Int!
+    take: Int!
+}
+
+
+input AccountInput {
+  name: String!
+  password: String!
+  email: String!
+}
+
+input OrderLineItemInput {
+    id: String!
+    amount: Float!
+    description: String!
+}
+
+input OrderInput {
+    accountId: String!
+    lineItems: [OrderLineItemInput!]!
+}
+
+type Mutation {
+    createAccount(Account: AccountInput!): Account!
+    integrateShop(shopName: String!): String!
+    exchangeAccessToken(shopName: String!, code: String!, accountId: String!): Boolean!
+    syncOrders(accountId: String!): SyncOrdersResult!  
+    rechargeWallet(input: RechargeWalletInput!): WalletOperationResponse!
+    deductBalance(input: DeductBalanceInput!): WalletOperationResponse!
+
+}
+
+type Query {
+    getAccountByID(email: String!, password: String!): Account!
+    accounts(pagination: PaginationInput!): [Account!]!
+    getOrdersForAccount(accountId: String!, pagination: OrderPaginationInput): OrderConnection!
+    getOrder(id: String!): Order
+    getWalletDetails(input: GetWalletDetailsInput!): WalletDetailsResponse!
+} 
+
+type Accounts {
+    orders(pagination: PaginationInput!): [Order!]!
+}
