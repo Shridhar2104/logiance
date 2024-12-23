@@ -78,10 +78,44 @@ services:
     env_file:
       - .env.development 
 
+  payment-db:
+    build:
+      context: .
+      dockerfile: ./payment/db.dockerfile
+    environment:
+      DATABASE_URL: postgres://payment_service_user:securepassword@payment-db:5432/payment_service_db?sslmode=disable
+      POSTGRES_USER: payment_service_user
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: payment_service_db
+    volumes:
+      - payment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    restart: always
+
+  payment-service:
+    build:
+      context: .  # Path to your payment microservice's code
+      dockerfile: ./payment/cmd/payment/Dockerfile
+    depends_on:
+      - payment-db  # Ensure the DB is up before starting the service
+    networks:
+      - logilo-network
+    ports:
+      - "8082:8082"  # Expose the payment service on port 8082
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      DB_USER: payment_service_user
+      DB_PASSWORD: securepassword
+      DB_NAME: payment_service_db
+    restart: on-failure
 
 volumes:
   shopify_postgres_data:
   account_postgres_data:
+  payment_postgres_data:  # Volume for the payment database
+
 networks:
   logilo-network:
     driver: bridge
