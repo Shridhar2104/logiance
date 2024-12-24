@@ -1,10 +1,10 @@
+// graphql/graph.go
 package main
 
 import (
     "github.com/99designs/gqlgen/graphql"
     "github.com/Shridhar2104/logilo/account"
     "github.com/Shridhar2104/logilo/shopify"
-  
 )
 
 type Server struct {
@@ -42,7 +42,6 @@ func (s *Server) Account() AccountResolver {
 func (s *Server) Order() OrderResolver {
     return &orderResolver{s}
 }
-
 
 func (s *Server) ToNewExecutableSchema() graphql.ExecutableSchema {
     return NewExecutableSchema(Config{
