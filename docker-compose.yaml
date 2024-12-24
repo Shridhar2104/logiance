@@ -117,9 +117,9 @@ services:
       context: .  # Path to your service's Go code
       dockerfile: ./graphql/app.dockerfile
     environment:
-      - ACCOUNT_URL= account-service:8081
-      - SHOPIFY_URL= shopify-service:8080
-      - PAYMENT_URL= payment-service:50051
+      - ACCOUNT_URL=account-service:8081
+      - SHOPIFY_URL=shopify-service:8080
+      - PAYMENT_URL=payment-service:50051
       - SHIPMENT_URL=shipment-service:50052
     networks:
       - logilo-network
