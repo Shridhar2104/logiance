@@ -30,7 +30,7 @@ WORKDIR /app
 COPY --from=builder /shipment-service .
 
 # Expose gRPC port
-EXPOSE 50051
+EXPOSE 50052
 
 # The environment variables will be passed from docker-compose
 ENV DELHIVERY_API_KEY=""

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Shridhar2104/logilo/graphql/models"
-	pb "github.com/Shridhar2104/logilo/shipment/proto"
+	pb "github.com/Shridhar2104/logilo/shipment/proto/proto"
 )
 
 type ShippingResolver struct {
@@ -90,8 +90,12 @@ func (r *ShippingResolver) GetAvailableCouriers(ctx context.Context, input Avail
         Error:            resp.Error,
     }, nil
 }
-
 func (r *ShippingResolver) CreateShipment(ctx context.Context, input CreateShipmentInput) (*ShipmentResponse, error) {
+    // Check if shipmentClient is initialized
+    if r.shipmentClient == nil {
+        return nil, fmt.Errorf("shipping client not initialized")
+    }
+
     // Convert addresses to protobuf format
     consignee := &pb.Address{
         Name:         input.Consignee.Name,
@@ -151,21 +155,36 @@ func (r *ShippingResolver) CreateShipment(ctx context.Context, input CreateShipm
 
     resp, err := r.shipmentClient.CreateShipment(ctx, req)
     if err != nil {
+        errMsg := err.Error()
         return &ShipmentResponse{
             Success: false,
-            Error:  &resp.Error,
+            Error:   &errMsg,
         }, nil
     }
 
+    if resp == nil {
+        errMsg := "received nil response from shipment service"
+        return &ShipmentResponse{
+            Success: false,
+            Error:   &errMsg,
+        }, nil
+    }
+
+    // Create safe copies of the strings
+    trackingId := resp.TrackingId
+    courierAwb := resp.CourierAwb
+    label := resp.Label
+    errStr := resp.Error
+
     return &ShipmentResponse{
         Success:    resp.Success,
-        TrackingID: &resp.TrackingId,
-        CourierAwb: &resp.CourierAwb,
-        Label:      &resp.Label,
-        Error:      &resp.Error,
+        TrackingID: &trackingId,
+        CourierAwb: &courierAwb,
+        Label:      &label,
+        Error:      &errStr,
     }, nil
-}
 
+}
 func (r *ShippingResolver) TrackShipment(ctx context.Context, input TrackingInput) (*TrackingResponse, error) {
     req := &pb.TrackingRequest{
         CourierCode: input.CourierCode,

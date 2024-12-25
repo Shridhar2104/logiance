@@ -10,7 +10,7 @@ import (
 	"github.com/Shridhar2104/logilo/payment"
 	"github.com/Shridhar2104/logilo/shopify"
 
-	pb "github.com/Shridhar2104/logilo/shipment/proto"
+	pb "github.com/Shridhar2104/logilo/shipment/proto/proto"
 
 	"google.golang.org/grpc"
 )
@@ -111,9 +111,7 @@ type courierRateResolver struct {
 }
 
 
-func (r *Server) CourierRate() CourierRateResolver {
-    return &courierRateResolver{r}
-}
+
 
 func (r *courierRateResolver) CodCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
     return obj.CodCharge, nil

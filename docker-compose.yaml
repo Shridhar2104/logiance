@@ -1,4 +1,5 @@
 version: '3.8'
+
 x-common-variables: &common-variables
   DELHIVERY_API_KEY: ${DELHIVERY_API_KEY}
   DELHIVERY_BASE_URL: ${DELHIVERY_BASE_URL}
@@ -7,10 +8,9 @@ x-common-variables: &common-variables
   BLUEDART_BASE_URL: ${BLUEDART_BASE_URL}
   BLUEDART_RATE_LIMIT: ${BLUEDART_RATE_LIMIT:-30}
 
-
 services:
   shopify-db:
-    build: 
+    build:
       context: .
       dockerfile: ./shopify/db.dockerfile
     environment:
@@ -22,38 +22,61 @@ services:
     networks:
       - logilo-network
     restart: always
+
   shopify-service:
     build:
-      context: .  # Path to your service's Go code
+      context: .
       dockerfile: ./shopify/app.dockerfile
     depends_on:
-      - shopify-db  # Ensure the DB is up before starting the service
+      - shopify-db
     networks:
       - logilo-network
     ports:
-      - "8080:8080"  # Adjust if your service runs on different ports
+      - "8080:8080"
     env_file:
-      - .env.development 
+      - .env.development
 
-    
+  shipment-db:
+    build:
+      context: .
+      dockerfile: ./shipment/db.dockerfile
+    environment:
+      POSTGRES_USER: shipment_user_dev
+      POSTGRES_PASSWORD: shipment_password_dev
+      POSTGRES_DB: shipment_db_dev
+    volumes:
+      - shipment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipment_user_dev -d shipment_db_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   shipment-service:
     build:
       context: .
       dockerfile: ./shipment/app.dockerfile
     environment:
       <<: *common-variables
-    env_file:
-      - .env.development
+      DATABASE_SHIPMENT_URL: postgres://shipment_user_dev:shipment_password_dev@shipment-db:5432/shipment_db_dev?sslmode=disable
+      XPRESSBEES_EMAIL: shridhar2104@gmail.com
+      XPRESSBEES_PASSWORD: 483k5epan21
+    depends_on:
+      shipment-db:
+        condition: service_healthy
     networks:
       - logilo-network
     ports:
       - "50052:50052"
+    env_file:
+      - .env.development
     restart: on-failure
 
-
-
   account-db:
-    build: 
+    build:
       context: .
       dockerfile: ./account/db.dockerfile
     environment:
@@ -68,19 +91,19 @@ services:
 
   account-service:
     build:
-      context: .  # Path to your service's Go code
+      context: .
       dockerfile: ./account/app.dockerfile
     depends_on:
-      - account-db  # Ensure the DB is up before starting the service
+      - account-db
     networks:
       - logilo-network
     ports:
-      - "8081:8081"  # Adjust if your service runs on different ports
+      - "8081:8081"
     env_file:
-      - .env.development 
+      - .env.development
 
   payment-db:
-    build: 
+    build:
       context: .
       dockerfile: ./payment/db.dockerfile
     environment:
@@ -95,15 +118,15 @@ services:
 
   payment-service:
     build:
-      context: .  # Path to your payment microservice's code
+      context: .
       dockerfile: ./payment/cmd/payment/Dockerfile
     depends_on:
-      - payment-db  # Ensure the DB is up before starting the service
+      - payment-db
     networks:
       - logilo-network
     ports:
-      - "8082:8082"  # Expose the payment service on port 8082
-      - "50051:50051"  # Expose the gRPC service on port 50051
+      - "8082:8082"
+      - "50051:50051"
     environment:
       DB_HOST: payment-db
       DB_PORT: 5432
@@ -114,7 +137,7 @@ services:
 
   graphql-service:
     build:
-      context: .  # Path to your service's Go code
+      context: .
       dockerfile: ./graphql/app.dockerfile
     environment:
       - ACCOUNT_URL=account-service:8081
@@ -124,9 +147,9 @@ services:
     networks:
       - logilo-network
     ports:
-      - "8084:8084"  # Adjust if your service runs on different ports
+      - "8084:8084"
     env_file:
-      - .env.development 
+      - .env.development
     restart: on-failure
     depends_on:
       - shopify-service
@@ -138,6 +161,7 @@ volumes:
   shopify_postgres_data:
   account_postgres_data:
   payment_postgres_data:
+  shipment_postgres_data:
 
 networks:
   logilo-network:
