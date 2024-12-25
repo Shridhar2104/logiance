@@ -42,6 +42,23 @@ type AvailabilityInput struct {
 	PaymentMode        *PaymentMode `json:"payment_mode,omitempty"`
 }
 
+type BankAccount struct {
+	UserID          string `json:"userId"`
+	AccountNumber   string `json:"accountNumber"`
+	BeneficiaryName string `json:"beneficiaryName"`
+	IfscCode        string `json:"ifscCode"`
+	BankName        string `json:"bankName"`
+	CreatedAt       string `json:"createdAt"`
+	UpdatedAt       string `json:"updatedAt"`
+}
+
+type BankAccountInput struct {
+	AccountNumber   string `json:"accountNumber"`
+	BeneficiaryName string `json:"beneficiaryName"`
+	IfscCode        string `json:"ifscCode"`
+	BankName        string `json:"bankName"`
+}
+
 type CreateShipmentInput struct {
 	CourierCode       string            `json:"courier_code"`
 	OrderNumber       string            `json:"order_number"`
@@ -252,7 +269,7 @@ func (e OrderSortField) String() string {
 	return string(e)
 }
 
-func (e *OrderSortField) UnmarshalGQL(v interface{}) error {
+func (e *OrderSortField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -293,7 +310,7 @@ func (e PaymentMode) String() string {
 	return string(e)
 }
 
-func (e *PaymentMode) UnmarshalGQL(v interface{}) error {
+func (e *PaymentMode) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -334,7 +351,7 @@ func (e PaymentType) String() string {
 	return string(e)
 }
 
-func (e *PaymentType) UnmarshalGQL(v interface{}) error {
+func (e *PaymentType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -375,7 +392,7 @@ func (e SortDirection) String() string {
 	return string(e)
 }
 
-func (e *SortDirection) UnmarshalGQL(v interface{}) error {
+func (e *SortDirection) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -420,7 +437,7 @@ func (e WalletStatus) String() string {
 	return string(e)
 }
 
-func (e *WalletStatus) UnmarshalGQL(v interface{}) error {
+func (e *WalletStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

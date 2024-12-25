@@ -22,15 +22,25 @@ const (
 	AccountService_CreateAccount_FullMethodName                = "/pb.AccountService/CreateAccount"
 	AccountService_GetAccountByEmailAndPassword_FullMethodName = "/pb.AccountService/GetAccountByEmailAndPassword"
 	AccountService_ListAccounts_FullMethodName                 = "/pb.AccountService/ListAccounts"
+	AccountService_AddBankAccount_FullMethodName               = "/pb.AccountService/AddBankAccount"
+	AccountService_GetBankAccount_FullMethodName               = "/pb.AccountService/GetBankAccount"
+	AccountService_UpdateBankAccount_FullMethodName            = "/pb.AccountService/UpdateBankAccount"
+	AccountService_DeleteBankAccount_FullMethodName            = "/pb.AccountService/DeleteBankAccount"
 )
 
 // AccountServiceClient is the client API for AccountService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountServiceClient interface {
+	// Existing account methods
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*CreateAccountResponse, error)
 	GetAccountByEmailAndPassword(ctx context.Context, in *GetAccountByEmailAndPasswordRequest, opts ...grpc.CallOption) (*GetAccountByEmailAndPasswordResponse, error)
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
+	// New bank account methods
+	AddBankAccount(ctx context.Context, in *AddBankAccountRequest, opts ...grpc.CallOption) (*AddBankAccountResponse, error)
+	GetBankAccount(ctx context.Context, in *GetBankAccountRequest, opts ...grpc.CallOption) (*GetBankAccountResponse, error)
+	UpdateBankAccount(ctx context.Context, in *UpdateBankAccountRequest, opts ...grpc.CallOption) (*UpdateBankAccountResponse, error)
+	DeleteBankAccount(ctx context.Context, in *DeleteBankAccountRequest, opts ...grpc.CallOption) (*DeleteBankAccountResponse, error)
 }
 
 type accountServiceClient struct {
@@ -71,13 +81,59 @@ func (c *accountServiceClient) ListAccounts(ctx context.Context, in *ListAccount
 	return out, nil
 }
 
+func (c *accountServiceClient) AddBankAccount(ctx context.Context, in *AddBankAccountRequest, opts ...grpc.CallOption) (*AddBankAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddBankAccountResponse)
+	err := c.cc.Invoke(ctx, AccountService_AddBankAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) GetBankAccount(ctx context.Context, in *GetBankAccountRequest, opts ...grpc.CallOption) (*GetBankAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBankAccountResponse)
+	err := c.cc.Invoke(ctx, AccountService_GetBankAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) UpdateBankAccount(ctx context.Context, in *UpdateBankAccountRequest, opts ...grpc.CallOption) (*UpdateBankAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateBankAccountResponse)
+	err := c.cc.Invoke(ctx, AccountService_UpdateBankAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) DeleteBankAccount(ctx context.Context, in *DeleteBankAccountRequest, opts ...grpc.CallOption) (*DeleteBankAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteBankAccountResponse)
+	err := c.cc.Invoke(ctx, AccountService_DeleteBankAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
 type AccountServiceServer interface {
+	// Existing account methods
 	CreateAccount(context.Context, *CreateAccountRequest) (*CreateAccountResponse, error)
 	GetAccountByEmailAndPassword(context.Context, *GetAccountByEmailAndPasswordRequest) (*GetAccountByEmailAndPasswordResponse, error)
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
+	// New bank account methods
+	AddBankAccount(context.Context, *AddBankAccountRequest) (*AddBankAccountResponse, error)
+	GetBankAccount(context.Context, *GetBankAccountRequest) (*GetBankAccountResponse, error)
+	UpdateBankAccount(context.Context, *UpdateBankAccountRequest) (*UpdateBankAccountResponse, error)
+	DeleteBankAccount(context.Context, *DeleteBankAccountRequest) (*DeleteBankAccountResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -96,6 +152,18 @@ func (UnimplementedAccountServiceServer) GetAccountByEmailAndPassword(context.Co
 }
 func (UnimplementedAccountServiceServer) ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
+}
+func (UnimplementedAccountServiceServer) AddBankAccount(context.Context, *AddBankAccountRequest) (*AddBankAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddBankAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) GetBankAccount(context.Context, *GetBankAccountRequest) (*GetBankAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBankAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) UpdateBankAccount(context.Context, *UpdateBankAccountRequest) (*UpdateBankAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBankAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) DeleteBankAccount(context.Context, *DeleteBankAccountRequest) (*DeleteBankAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteBankAccount not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -172,6 +240,78 @@ func _AccountService_ListAccounts_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_AddBankAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddBankAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).AddBankAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_AddBankAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).AddBankAccount(ctx, req.(*AddBankAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_GetBankAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBankAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetBankAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetBankAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetBankAccount(ctx, req.(*GetBankAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UpdateBankAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBankAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UpdateBankAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_UpdateBankAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UpdateBankAccount(ctx, req.(*UpdateBankAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_DeleteBankAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBankAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).DeleteBankAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_DeleteBankAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).DeleteBankAccount(ctx, req.(*DeleteBankAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +330,22 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAccounts",
 			Handler:    _AccountService_ListAccounts_Handler,
+		},
+		{
+			MethodName: "AddBankAccount",
+			Handler:    _AccountService_AddBankAccount_Handler,
+		},
+		{
+			MethodName: "GetBankAccount",
+			Handler:    _AccountService_GetBankAccount_Handler,
+		},
+		{
+			MethodName: "UpdateBankAccount",
+			Handler:    _AccountService_UpdateBankAccount_Handler,
+		},
+		{
+			MethodName: "DeleteBankAccount",
+			Handler:    _AccountService_DeleteBankAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
