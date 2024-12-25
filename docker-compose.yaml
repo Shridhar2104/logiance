@@ -1,10 +1,19 @@
+version: '3.8'
+x-common-variables: &common-variables
+  DELHIVERY_API_KEY: ${DELHIVERY_API_KEY}
+  DELHIVERY_BASE_URL: ${DELHIVERY_BASE_URL}
+  DELHIVERY_RATE_LIMIT: ${DELHIVERY_RATE_LIMIT:-40}
+  BLUEDART_API_KEY: ${BLUEDART_API_KEY}
+  BLUEDART_BASE_URL: ${BLUEDART_BASE_URL}
+  BLUEDART_RATE_LIMIT: ${BLUEDART_RATE_LIMIT:-30}
+
+
 services:
   shopify-db:
     build: 
       context: .
       dockerfile: ./shopify/db.dockerfile
     environment:
-      DATABASE_URL: postgres://shopify_user_dev:shopify_password_dev@shopify-db:5432/shopify_db_dev?sslmode=disable
       POSTGRES_USER: shopify_user_dev
       POSTGRES_PASSWORD: shopify_password_dev
       POSTGRES_DB: shopify_db_dev
@@ -12,15 +21,11 @@ services:
       - shopify_postgres_data:/var/lib/postgresql/data
     networks:
       - logilo-network
-    env_file:
-      - .env.development 
     restart: always
-
   shopify-service:
     build:
       context: .  # Path to your service's Go code
       dockerfile: ./shopify/app.dockerfile
-    
     depends_on:
       - shopify-db  # Ensure the DB is up before starting the service
     networks:
@@ -30,23 +35,22 @@ services:
     env_file:
       - .env.development 
 
-  graphql-service:
+    
+  shipment-service:
     build:
-      context: .  # Path to your service's Go code
-      dockerfile: ./graphql/app.dockerfile
+      context: .
+      dockerfile: ./shipment/app.dockerfile
     environment:
-      - ACCOUNT_URL=account-service:8081
-      - SHOPIFY_URL=shopify-service:8080
+      <<: *common-variables
+    env_file:
+      - .env.development
     networks:
       - logilo-network
     ports:
-      - "8084:8084"  # Adjust if your service runs on different ports
-    env_file:
-      - .env.development 
+      - "50052:50052"
     restart: on-failure
-    depends_on:
-      - shopify-service
-      - account-service
+
+
 
   account-db:
     build: 
@@ -84,10 +88,66 @@ services:
     env_file:
       - .env.development 
 
+  payment-db:
+    build: 
+      context: .
+      dockerfile: ./payment/db.dockerfile
+    environment:
+      POSTGRES_USER: payment_service_user
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: payment_service_db
+    volumes:
+      - payment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    restart: always
+
+  payment-service:
+    build:
+      context: .  # Path to your payment microservice's code
+      dockerfile: ./payment/cmd/payment/Dockerfile
+    depends_on:
+      - payment-db  # Ensure the DB is up before starting the service
+    networks:
+      - logilo-network
+    ports:
+      - "8082:8082"  # Expose the payment service on port 8082
+      - "50051:50051"  # Expose the gRPC service on port 50051
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      DB_USER: payment_service_user
+      DB_PASSWORD: securepassword
+      DB_NAME: payment_service_db
+    restart: on-failure
+
+  graphql-service:
+    build:
+      context: .  # Path to your service's Go code
+      dockerfile: ./graphql/app.dockerfile
+    environment:
+      - ACCOUNT_URL=account-service:8081
+      - SHOPIFY_URL=shopify-service:8080
+      - PAYMENT_URL=payment-service:50051
+      - SHIPMENT_URL=shipment-service:50052
+    networks:
+      - logilo-network
+    ports:
+      - "8084:8084"  # Adjust if your service runs on different ports
+    env_file:
+      - .env.development 
+    restart: on-failure
+    depends_on:
+      - shopify-service
+      - account-service
+      - payment-service
+      - shipment-service
 
 volumes:
   shopify_postgres_data:
   account_postgres_data:
+  payment_postgres_data:
+
 networks:
   logilo-network:
     driver: bridge

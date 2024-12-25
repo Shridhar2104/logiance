@@ -1,13 +1,42 @@
-FROM golang:1.13-alpine3.11 AS build
-RUN apk --no-cache add gcc g++ make ca-certificates
-WORKDIR /go/src/github.com/Shridhar2104/logilo
-COPY go.mod go.sum ./
-COPY vendor vendor
-COPY shipment shipment
-RUN GO111MODULE=on go build -mod vendor -o /go/bin/app ./shipment/cmd/shipment
+# ./shipment/app.dockerfile
+FROM golang:1.23-alpine AS builder
 
-FROM alpine:3.11
-WORKDIR /usr/bin
-COPY --from=build /go/bin .
-EXPOSE 8080
-CMD ["app"]
+WORKDIR /app
+
+# Install necessary build tools
+RUN apk add --no-cache git
+
+# Copy go mod and sum files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o /shipment-service ./shipment/cmd/server
+
+# Create final lightweight image
+FROM alpine:latest
+
+# Add ca certificates for HTTPS calls
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+# Copy the binary from builder
+COPY --from=builder /shipment-service .
+
+# Expose gRPC port
+EXPOSE 50051
+
+# The environment variables will be passed from docker-compose
+ENV DELHIVERY_API_KEY=""
+ENV DELHIVERY_BASE_URL=""
+ENV BLUEDART_API_KEY=""
+ENV BLUEDART_BASE_URL=""
+
+# Run the service
+CMD ["./shipment-service"]

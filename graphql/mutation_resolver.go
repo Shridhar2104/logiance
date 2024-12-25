@@ -36,6 +36,8 @@ func (r *mutationResolver) CreateAccount(ctx context.Context, input AccountInput
 	}, nil
 }
 
+
+
 // mutation_resolver.go
 
 func (r *mutationResolver) IntegrateShop(ctx context.Context, shopName string) (string, error) {
@@ -90,6 +92,67 @@ func (r *mutationResolver) SyncOrders(ctx context.Context, accountId string) (*m
         ShopResults:   shopDetailsSlice,
     }, nil
 }
+
+
+
+
+
+
+//recharge wallet
+func (r *mutationResolver) RechargeWallet(ctx context.Context, input RechargeWalletInput) (*WalletOperationResponse, error) {
+    newBalance, err := r.server.paymentClient.RechargeWallet(ctx, input.AccountID, input.Amount)
+    if err != nil {
+        return &WalletOperationResponse{
+            NewBalance: 0,
+            Errors: []*Error{{
+                Code:    "RECHARGE_FAILED",
+                Message: fmt.Sprintf("Failed to recharge wallet: %v", err),
+            }},
+        }, nil
+    }
+
+    return &WalletOperationResponse{
+        NewBalance: newBalance,
+        Errors:    nil,
+    }, nil
+}
+
+//deduct balance
+func (r *mutationResolver) DeductBalance(ctx context.Context, input DeductBalanceInput) (*WalletOperationResponse, error) {
+    newBalance, err := r.server.paymentClient.DeductBalance(ctx, input.AccountID, input.Amount, input.OrderID)
+    if err != nil {
+        return &WalletOperationResponse{
+            NewBalance: 0,
+            Errors: []*Error{{
+                Code:    "DEDUCTION_FAILED",
+                Message: fmt.Sprintf("Failed to deduct balance: %v", err),
+            }},
+        }, nil
+    }
+
+    return &WalletOperationResponse{
+        NewBalance: newBalance,
+        Errors:    nil,
+    }, nil
+}
+// Shipping mutations
+func (r *mutationResolver) CalculateShippingRates(ctx context.Context, input ShippingRateInput) (*models.ShippingRateResponse, error) {
+    return r.server.Shipping().CalculateShippingRates(ctx, input)
+}
+
+func (r *mutationResolver) GetAvailableCouriers(ctx context.Context, input AvailabilityInput) (*models.CourierAvailabilityResponse, error) {
+    return r.server.Shipping().GetAvailableCouriers(ctx, input)
+}
+
+func (r *mutationResolver) CreateShipment(ctx context.Context, input CreateShipmentInput) (*ShipmentResponse, error) {
+    return r.server.Shipping().CreateShipment(ctx, input)
+}
+
+func (r *mutationResolver) TrackShipment(ctx context.Context, input TrackingInput) (*TrackingResponse, error) {
+    return r.server.Shipping().TrackShipment(ctx, input)
+}
+
+
 
 // Add new bank account mutations
 func (r *mutationResolver) AddBankAccount(ctx context.Context, userID string, input BankAccountInput) (*BankAccount, error) {

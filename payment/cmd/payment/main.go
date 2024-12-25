@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
@@ -10,16 +11,18 @@ import (
 	"syscall"
 
 	_ "github.com/lib/pq"
+	"github.com/razorpay/razorpay-go"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/Shridhar2104/logilo/payment"
 	"github.com/Shridhar2104/logilo/payment/pb"
 )
 
 const (
-	httpPort    = ":8080"
+	httpPort    = ":8082"
 	grpcPort    = ":50051"
-	dbConnString = "postgres://username:password@localhost:5432/payment_db?sslmode=disable"
+	dbConnString = "postgres://payment_service_user:securepassword@payment-db:5432/payment_service_db?sslmode=disable"
 )
 
 func main() {
@@ -29,14 +32,51 @@ func main() {
 	}
 	defer db.Close()
 
+	// Verify database connection
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
+	log.Println("Successfully connected to the database")
+
 	repo := payment.NewRepository(db)
 	svc := payment.NewService(repo)
 	httpServer := payment.NewServer(svc)
 	mux := http.NewServeMux()
 	httpServer.RegisterRoutes(mux)
 
+	// Add endpoint to create Razorpay order
+	mux.HandleFunc("/create-order", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			AccountID string  `json:"account_id"`
+			Amount    float64 `json:"amount"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		razorpayClient := razorpay.NewClient("YOUR_RAZORPAY_API_KEY", "YOUR_RAZORPAY_SECRET")
+
+		orderData := map[string]interface{}{
+			"amount":   int(req.Amount * 100), // Amount in paise
+			"currency": "INR",
+			"receipt":  "txn_" + req.AccountID,
+		}
+
+		order, err := razorpayClient.Order.Create(orderData, nil)
+		if err != nil {
+			http.Error(w, "Failed to create Razorpay order: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(order)
+	})
+
 	grpcServer := grpc.NewServer()
 	pb.RegisterPaymentServiceServer(grpcServer, payment.NewGRPCServer(svc))
+
+	// Register reflection service on gRPC server
+	reflection.Register(grpcServer)
 
 	go func() {
 		log.Printf("Starting HTTP server on port %s", httpPort)
