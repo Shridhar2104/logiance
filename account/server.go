@@ -1,108 +1,164 @@
 package account
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net"
+    "context"
+    "fmt"
+    "log"
+    "net"
 
-	"github.com/Shridhar2104/logilo/account/pb"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+    "github.com/Shridhar2104/logilo/account/pb"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/reflection"
 )
 
-// grpcServer implements the gRPC server and embeds UnimplementedAccountServiceServer
-// to ensure forward compatibility with newer versions of the gRPC service definitions.
 type grpcServer struct {
-	pb.UnimplementedAccountServiceServer
-	service Service
+    pb.UnimplementedAccountServiceServer
+    service Service
 }
 
-// NewGRPCServer initializes and starts the gRPC server.
-// It takes a Service instance and the server's listening port as parameters.
 func NewGRPCServer(service Service, port int) error {
-	// Create a TCP listener at the specified port
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		return fmt.Errorf("failed to listen on port %d: %w", port, err)
-	}
+    lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+    if err != nil {
+        return fmt.Errorf("failed to listen on port %d: %w", port, err)
+    }
 
-	// Initialize a new gRPC server instance
-	server := grpc.NewServer()
+    server := grpc.NewServer()
+    pb.RegisterAccountServiceServer(server, &grpcServer{service: service})
+    reflection.Register(server)
 
-	// Register the gRPC server with the service implementation
-	pb.RegisterAccountServiceServer(server, &grpcServer{service: service})
-
-	// Enable gRPC server reflection to make debugging easier
-	reflection.Register(server)
-
-	// Start serving gRPC requests
-	log.Printf("gRPC server listening on port %d", port)
-	return server.Serve(lis)
+    log.Printf("gRPC server listening on port %d", port)
+    return server.Serve(lis)
 }
 
-// CreateAccount handles the creation of a new account via gRPC.
-// It validates the request, calls the business logic, and sends back a response.
+// Existing account methods remain unchanged
 func (s *grpcServer) CreateAccount(ctx context.Context, r *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
-	// Call the service layer's CreateAccount method
-	a, err := s.service.CreateAccount(ctx, r.Name, r.Password, r.Email)
-	if err != nil {
-		log.Printf("Failed to create account: %v", err)
-		// Return a wrapped error with additional context
-		return nil, fmt.Errorf("failed to create account: %w", err)
-	}
+    a, err := s.service.CreateAccount(ctx, r.Name, r.Password, r.Email)
+    if err != nil {
+        log.Printf("Failed to create account: %v", err)
+        return nil, fmt.Errorf("failed to create account: %w", err)
+    }
 
-	// Construct and return the gRPC response
-	return &pb.CreateAccountResponse{
-		Account: &pb.Account{
-			Id:   a.ID.String(),
-			Name: a.Name,
-		},
-	}, nil
+    return &pb.CreateAccountResponse{
+        Account: &pb.Account{
+            Id:   a.ID.String(),
+            Name: a.Name,
+        },
+    }, nil
 }
 
-// GetAccountByID fetches account details based on the provided ID.
-// It queries the service layer and sends the account details back via gRPC.
 func (s *grpcServer) GetAccountByEmailAndPassword(ctx context.Context, r *pb.GetAccountByEmailAndPasswordRequest) (*pb.GetAccountByEmailAndPasswordResponse, error) {
-	// Query the service layer for account details by email
-	a, err := s.service.LoginAccount(ctx, r.Email, r.Password)
-	if err != nil {
-		log.Printf("Error while authenticating account: %v", err)
-		return nil, fmt.Errorf("error while authenticating account: %w", err)
-	}
+    a, err := s.service.LoginAccount(ctx, r.Email, r.Password)
+    if err != nil {
+        log.Printf("Error while authenticating account: %v", err)
+        return nil, fmt.Errorf("error while authenticating account: %w", err)
+    }
 
-	// Return the account data as part of the gRPC response
-	return &pb.GetAccountByEmailAndPasswordResponse{
-		Account: &pb.Account{
-			Id:   a.ID.String(),
-			Name: a.Name,
-			Email:a.Email,
-		},
-	}, nil
+    return &pb.GetAccountByEmailAndPasswordResponse{
+        Account: &pb.Account{
+            Id:    a.ID.String(),
+            Name:  a.Name,
+            Email: a.Email,
+        },
+    }, nil
 }
 
-
-// ListAccounts retrieves a paginated list of accounts from the database.
-// The request contains skip/offset and take/limit parameters for pagination.
 func (s *grpcServer) ListAccounts(ctx context.Context, r *pb.ListAccountsRequest) (*pb.ListAccountsResponse, error) {
-	// Query the service layer for a paginated list of accounts
-	accounts, err := s.service.ListAccounts(ctx, r.Skip, r.Take)
-	if err != nil {
-		log.Printf("Error while listing accounts: %v", err)
-		return nil, fmt.Errorf("error while listing accounts: %w", err)
-	}
+    accounts, err := s.service.ListAccounts(ctx, r.Skip, r.Take)
+    if err != nil {
+        log.Printf("Error while listing accounts: %v", err)
+        return nil, fmt.Errorf("error while listing accounts: %w", err)
+    }
 
-	// Map database account models to gRPC Account representations
-	grpcAccounts := []*pb.Account{}
-	for _, account := range accounts {
-		grpcAccounts = append(grpcAccounts, &pb.Account{
-			Id:   account.ID.String(),
-			Name: account.Name,
-		})
-	}
+    grpcAccounts := []*pb.Account{}
+    for _, account := range accounts {
+        grpcAccounts = append(grpcAccounts, &pb.Account{
+            Id:   account.ID.String(),
+            Name: account.Name,
+        })
+    }
 
-	// Return the mapped list of accounts in the response
-	return &pb.ListAccountsResponse{
-		Accounts: grpcAccounts,
-	}, nil
+    return &pb.ListAccountsResponse{
+        Accounts: grpcAccounts,
+    }, nil
+}
+
+// New bank account methods
+func (s *grpcServer) AddBankAccount(ctx context.Context, r *pb.AddBankAccountRequest) (*pb.AddBankAccountResponse, error) {
+    bankAccount, err := s.service.AddBankAccount(
+        ctx,
+        r.UserId,
+        r.AccountNumber,
+        r.BeneficiaryName,
+        r.IfscCode,
+        r.BankName,
+    )
+    if err != nil {
+        log.Printf("Failed to add bank account: %v", err)
+        return nil, fmt.Errorf("failed to add bank account: %w", err)
+    }
+
+    return &pb.AddBankAccountResponse{
+        BankAccount: &pb.BankAccount{
+            UserId:          bankAccount.UserID,
+            AccountNumber:   bankAccount.AccountNumber,
+            BeneficiaryName: bankAccount.BeneficiaryName,
+            IfscCode:        bankAccount.IFSCCode,
+            BankName:        bankAccount.BankName,
+        },
+    }, nil
+}
+
+func (s *grpcServer) GetBankAccount(ctx context.Context, r *pb.GetBankAccountRequest) (*pb.GetBankAccountResponse, error) {
+    bankAccount, err := s.service.GetBankAccount(ctx, r.UserId)
+    if err != nil {
+        log.Printf("Error while getting bank account: %v", err)
+        return nil, fmt.Errorf("error while getting bank account: %w", err)
+    }
+
+    return &pb.GetBankAccountResponse{
+        BankAccount: &pb.BankAccount{
+            UserId:          bankAccount.UserID,
+            AccountNumber:   bankAccount.AccountNumber,
+            BeneficiaryName: bankAccount.BeneficiaryName,
+            IfscCode:        bankAccount.IFSCCode,
+            BankName:        bankAccount.BankName,
+        },
+    }, nil
+}
+
+func (s *grpcServer) UpdateBankAccount(ctx context.Context, r *pb.UpdateBankAccountRequest) (*pb.UpdateBankAccountResponse, error) {
+    bankAccount, err := s.service.UpdateBankAccount(
+        ctx,
+        r.UserId,
+        r.AccountNumber,
+        r.BeneficiaryName,
+        r.IfscCode,
+        r.BankName,
+    )
+    if err != nil {
+        log.Printf("Failed to update bank account: %v", err)
+        return nil, fmt.Errorf("failed to update bank account: %w", err)
+    }
+
+    return &pb.UpdateBankAccountResponse{
+        BankAccount: &pb.BankAccount{
+            UserId:          bankAccount.UserID,
+            AccountNumber:   bankAccount.AccountNumber,
+            BeneficiaryName: bankAccount.BeneficiaryName,
+            IfscCode:        bankAccount.IFSCCode,
+            BankName:        bankAccount.BankName,
+        },
+    }, nil
+}
+
+func (s *grpcServer) DeleteBankAccount(ctx context.Context, r *pb.DeleteBankAccountRequest) (*pb.DeleteBankAccountResponse, error) {
+    err := s.service.DeleteBankAccount(ctx, r.UserId)
+    if err != nil {
+        log.Printf("Failed to delete bank account: %v", err)
+        return nil, fmt.Errorf("failed to delete bank account: %w", err)
+    }
+
+    return &pb.DeleteBankAccountResponse{
+        Success: true,
+    }, nil
 }
