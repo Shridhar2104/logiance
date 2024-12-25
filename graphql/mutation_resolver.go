@@ -135,34 +135,20 @@ func (r *mutationResolver) DeductBalance(ctx context.Context, input DeductBalanc
         Errors:    nil,
     }, nil
 }
+// Shipping mutations
 func (r *mutationResolver) CalculateShippingRates(ctx context.Context, input ShippingRateInput) (*models.ShippingRateResponse, error) {
-    // Convert the generated ShippingRateInput to models.ShippingRateInput if needed
-    modelInput := models.ShippingRateInput{
-        OriginPincode:      input.OriginPincode,
-        DestinationPincode: input.DestinationPincode,
-        Weight:             input.Weight,
-        CourierCodes:       input.CourierCodes,
-        PaymentMode:        models.PaymentMode(input.PaymentMode),
-        Dimensions:         make([]models.PackageDimensionInput, len(input.Dimensions)),
-    }
-
-    // Convert dimensions
-    for i, dim := range input.Dimensions {
-        modelInput.Dimensions[i] = models.PackageDimensionInput{
-            Length: dim.Length,
-            Width:  dim.Width,
-            Height: dim.Height,
-            Weight: dim.Weight,
-        }
-    }
-
-    return r.server.Shipping().CalculateShippingRates(ctx, modelInput)
+    return r.server.Shipping().CalculateShippingRates(ctx, input)
 }
+
 func (r *mutationResolver) GetAvailableCouriers(ctx context.Context, input AvailabilityInput) (*models.CourierAvailabilityResponse, error) {
-    modelInput := models.AvailabilityInput{
-        OriginPincode:      input.OriginPincode,
-        DestinationPincode: input.DestinationPincode,
-    }
-    return r.server.Shipping().GetAvailableCouriers(ctx, modelInput)
+    return r.server.Shipping().GetAvailableCouriers(ctx, input)
+}
+
+func (r *mutationResolver) CreateShipment(ctx context.Context, input CreateShipmentInput) (*ShipmentResponse, error) {
+    return r.server.Shipping().CreateShipment(ctx, input)
+}
+
+func (r *mutationResolver) TrackShipment(ctx context.Context, input TrackingInput) (*TrackingResponse, error) {
+    return r.server.Shipping().TrackShipment(ctx, input)
 }
 

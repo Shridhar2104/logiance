@@ -1,158 +1,297 @@
-// internal/courier/delhivery/provider.go
 package delhivery
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-
-	"net/http"
-	"net/url"
-
+	"sync"
 	"time"
 
 	"github.com/Shridhar2104/logilo/shipment/internal/config"
 	"github.com/Shridhar2104/logilo/shipment/internal/courier"
-	pb "github.com/Shridhar2104/logilo/shipment/proto"
 )
 
-type DelhiveryProvider struct {
-    cfg        *config.Config
-    httpClient *http.Client
+type Provider struct {
+    config     *config.CourierConfig
+    client     *courier.HTTPClient
+    authToken  string
+    tokenExp   time.Time
+    mu         sync.RWMutex
 }
 
-func NewProvider(cfg *config.Config) courier.Provider {
-    return &DelhiveryProvider{
-        cfg: cfg,
-        httpClient: &http.Client{
-            Timeout: time.Second * 10,
-        },
+func NewProvider(cfg *config.CourierConfig) courier.CourierProvider {
+    provider := &Provider{
+        config: cfg,
+        client: courier.NewHTTPClient(cfg.BaseURL, 30*time.Second),
+    }
+    return provider
+}
+
+func (p *Provider) GetProviderInfo() *courier.ProviderInfo {
+    return &courier.ProviderInfo{
+        Code:        "DELHIVERY",
+        Name:        "Delhivery",
+        Description: "Delhivery Express Shipping",
     }
 }
 
+func (p *Provider) authenticate(ctx context.Context) error {
+    p.mu.Lock()
+    defer p.mu.Unlock()
 
-
-type DelhiveryResponse struct {
-    Success      bool    `json:"success"`
-    TotalAmount  float64 `json:"total_amount"`
-    GrossAmount  float64 `json:"gross_amount"`
-    TaxAmount    float64 `json:"tax_amount"`
-    ErrorMessage string  `json:"error,omitempty"`
-}
-
-func (d *DelhiveryProvider) CalculateRate(ctx context.Context, req *pb.RateRequest) (*pb.CourierRate, error) {
-    // Build query parameters according to Delhivery API requirements
-    params := url.Values{}
-    
-    // Add mandatory parameters
-    params.Add("md", determineMode(req.PaymentMode))    // Use payment_mode to determine shipping mode
-    params.Add("cgm", fmt.Sprintf("%d", req.Weight))    // Weight in grams
-    params.Add("o_pin", fmt.Sprintf("%d", req.OriginPincode))
-    params.Add("d_pin", fmt.Sprintf("%d", req.DestinationPincode))
-    params.Add("ss", "Delivered")                       // Default to "Delivered" status
-
-    // Build the complete URL
-    baseURL := d.cfg.CourierConfig["DELHIVERY"].BaseURL
-    if baseURL == "" {
-        baseURL = "https://staging-express.delhivery.com" // Default to staging if not configured
+    if p.authToken != "" && time.Now().Before(p.tokenExp) {
+        return nil
     }
-    
-    apiURL := fmt.Sprintf("%s/api/kinko/v1/invoice/charges/.json?%s",
-        baseURL,
-        params.Encode())
 
-    // Create new request with context
-    httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+    authReq := map[string]string{
+        "client_id": p.config.ApiKey,
+        "client_secret": p.config.ApiSecret,
+        "grant_type": "client_credentials",
+    }
+
+    var authResp struct {
+        Token   string `json:"token"`
+        ExpireIn int    `json:"expires_in"`
+    }
+
+    err := p.client.Do(ctx, "POST", "/auth/token", authReq, &authResp)
     if err != nil {
-        return nil, fmt.Errorf("failed to create request: %w", err)
+        return fmt.Errorf("authentication failed: %w", err)
     }
 
-    // Add authorization header if configured
-    if apiKey := d.cfg.CourierConfig["DELHIVERY"].ApiKey; apiKey != "" {
-        httpReq.Header.Add("Authorization", apiKey)
+    p.authToken = authResp.Token
+    p.tokenExp = time.Now().Add(time.Duration(authResp.ExpireIn) * time.Second)
+    p.client.SetHeader("Authorization", "Bearer "+p.authToken)
+
+    return nil
+}
+
+// delhivery/provider.go
+func (p *Provider) CalculateRate(ctx context.Context, req *courier.RateRequest) (*courier.RateResponse, error) {
+    if err := p.authenticate(ctx); err != nil {
+        return nil, err
     }
 
-    // Make the request
-    resp, err := d.httpClient.Do(httpReq)
-    if err != nil {
-        return nil, fmt.Errorf("failed to make request: %w", err)
-    }
-    defer resp.Body.Close()
-
-    // Handle non-200 responses
-    if resp.StatusCode != http.StatusOK {
-        return nil, fmt.Errorf("API returned non-200 status code: %d", resp.StatusCode)
-    }
-
-    // Parse the response
-    var delhiveryResp DelhiveryResponse
-    if err := json.NewDecoder(resp.Body).Decode(&delhiveryResp); err != nil {
-        return nil, fmt.Errorf("failed to decode response: %w", err)
-    }
-
-    // Check for API-level errors
-    if !delhiveryResp.Success {
-        return nil, fmt.Errorf("API returned error: %s", delhiveryResp.ErrorMessage)
-    }
-
-    // Determine service type based on payment mode
-    serviceType := determineServiceType(req.PaymentMode)
-
-    // Map to CourierRate response
-    return &pb.CourierRate{
-        CourierCode: "DELHIVERY",
-        CourierName: "Delhivery",
-        ServiceType: serviceType,
-        RateDetails: &pb.RateData{
-            TotalAmount:    delhiveryResp.TotalAmount,
-            GrossAmount:    delhiveryResp.GrossAmount,
-            TaxAmount:      delhiveryResp.TaxAmount,
-            CodCharges:     calculateCODCharges(req.PaymentMode),
-            FuelSurcharge:  0, // Set if available in response
+    // Delhivery specific rate calculation request
+    rateReq := map[string]interface{}{
+        "pickup_pincode":     req.OriginPincode,
+        "delivery_pincode":   req.DestinationPincode,
+        "weight":            req.Weight,
+        "dimensions": map[string]float64{
+            "length": req.Length,
+            "width":  req.Width,
+            "height": req.Height,
         },
-        EstimatedDays: estimateDeliveryDays(serviceType),
+        "payment_type": req.PaymentMode,
+        "cod_value":    req.CollectableAmount,
+    }
+
+    var response struct {
+        Success bool `json:"success"`
+        Rate    struct {
+            FreightCharge  float64 `json:"freight_charge"`
+            FuelSurcharge  float64 `json:"fuel_surcharge"`
+            CODCharge      float64 `json:"cod_charge"`
+            OtherCharges   float64 `json:"other_charges"`
+            TotalCost      float64 `json:"total_cost"`
+            DeliveryDays   int     `json:"delivery_days"`
+        } `json:"rate"`
+    }
+
+    err := p.client.Do(ctx, "POST", "/api/kinko/v1/calculate/rate", rateReq, &response)
+    if err != nil {
+        return nil, fmt.Errorf("rate calculation failed: %w", err)
+    }
+
+    return &courier.RateResponse{
+        BaseCharge:     response.Rate.FreightCharge,
+        FuelSurcharge:  response.Rate.FuelSurcharge,
+        CODCharge:      response.Rate.CODCharge,
+        HandlingCharge: response.Rate.OtherCharges,
+        TotalCharge:    response.Rate.TotalCost,
+        ExpectedDays:   response.Rate.DeliveryDays,
     }, nil
 }
 
-// Helper functions for parameter mapping
 
-func determineMode(paymentMode string) string {
-    // For Delhivery, we'll use Surface by default
-    // You might want to adjust this logic based on your business rules
-    return "S"
+func (p *Provider) CreateShipment(ctx context.Context, req *courier.ShipmentRequest) (*courier.ShipmentResponse, error) {
+    if err := p.authenticate(ctx); err != nil {
+        return nil, err
+    }
+
+    // Convert to Delhivery's format
+    shipmentReq := map[string]interface{}{
+        "shipments": []map[string]interface{}{
+            {
+                "waybill": "",  // Will be generated by Delhivery
+                "order": req.OrderNumber,
+                "payment_mode": getPaymentMode(req.PaymentType),
+                "total_amount": req.OrderAmount,
+                "cod_amount": getCODAmount(req.PaymentType, req.OrderAmount),
+                "name": req.Consignee.Name,
+                "add": req.Consignee.AddressLine1,
+                "address_2": req.Consignee.AddressLine2,
+                "pin": req.Consignee.Pincode,
+                "city": req.Consignee.City,
+                "state": req.Consignee.State,
+                "phone": req.Consignee.Phone,
+                "weight": req.PackageWeight,
+                "height": req.PackageHeight,
+                "breadth": req.PackageBreadth,
+                "length": req.PackageLength,
+                "pickup_location": req.Pickup.CompanyName,
+            },
+        },
+    }
+
+    var response struct {
+        Success bool `json:"success"`
+        Data    struct {
+            AWB      string `json:"waybill"`
+            RefNum   string `json:"ref_num"`
+            Status   string `json:"status"`
+            LabelURL string `json:"label_url"`
+        } `json:"data"`
+        Error string `json:"error"`
+    }
+
+    err := p.client.Do(ctx, "POST", "/api/cmu/create.json", shipmentReq, &response)
+    if err != nil {
+        return nil, fmt.Errorf("create shipment failed: %w", err)
+    }
+
+    return &courier.ShipmentResponse{
+        Success:     response.Success,
+        TrackingID:  response.Data.AWB,
+        AWBNumber:   response.Data.AWB,
+        Label:       response.Data.LabelURL,
+        Error:       response.Error,
+    }, nil
 }
 
-func determineServiceType(paymentMode string) string {
-    switch paymentMode {
+func (p *Provider) TrackShipment(ctx context.Context, trackingID string) ([]courier.TrackingEvent, error) {
+    if err := p.authenticate(ctx); err != nil {
+        return nil, err
+    }
+
+    var response struct {
+        Success bool `json:"success"`
+        Data    struct {
+            Scans []struct {
+                ScanType   string    `json:"scan_type"`
+                ScanDate   string    `json:"scan_date"`
+                Location   string    `json:"location"`
+                StatusCode string    `json:"status_code"`
+                Message    string    `json:"message"`
+            } `json:"scans"`
+        } `json:"data"`
+    }
+
+    err := p.client.Do(ctx, "GET", fmt.Sprintf("/api/v1/packages/%s/track", trackingID), nil, &response)
+    if err != nil {
+        return nil, fmt.Errorf("tracking failed: %w", err)
+    }
+
+    var events []courier.TrackingEvent
+    for _, scan := range response.Data.Scans {
+        events = append(events, courier.TrackingEvent{
+            Status:       getMappedStatus(scan.StatusCode),
+            StatusCode:   scan.StatusCode,
+            Location:     scan.Location,
+            ActivityTime: scan.ScanDate,
+            Description: scan.Message,
+        })
+    }
+
+    return events, nil
+}
+
+func (p *Provider) CheckServiceability(ctx context.Context, originPin, destinationPin string, weight float64) (bool, error) {
+    if err := p.authenticate(ctx); err != nil {
+        return false, err
+    }
+
+    req := map[string]interface{}{
+        "pickup_postcode":   originPin,
+        "delivery_postcode": destinationPin,
+        "weight":           weight,
+    }
+
+    var response struct {
+        Success bool `json:"success"`
+        Data    struct {
+            Available bool    `json:"available"`
+            EDD      int     `json:"expected_delivery_days"`
+        } `json:"data"`
+    }
+
+    err := p.client.Do(ctx, "POST", "/api/checkServiceability", req, &response)
+    if err != nil {
+        return false, fmt.Errorf("serviceability check failed: %w", err)
+    }
+
+    return response.Success && response.Data.Available, nil
+}
+
+func (p *Provider) CancelShipment(ctx context.Context, trackingID string) error {
+    if err := p.authenticate(ctx); err != nil {
+        return err
+    }
+
+    req := map[string]interface{}{
+        "waybill": trackingID,
+    }
+
+    var response struct {
+        Success bool   `json:"success"`
+        Message string `json:"message"`
+    }
+
+    err := p.client.Do(ctx, "POST", "/api/v2/packages/cancel", req, &response)
+    if err != nil {
+        return fmt.Errorf("cancel shipment failed: %w", err)
+    }
+
+    if !response.Success {
+        return fmt.Errorf("cancel shipment failed: %s", response.Message)
+    }
+
+    return nil
+}
+
+// Helper functions
+
+func getPaymentMode(paymentType string) string {
+    switch paymentType {
     case "COD":
-        return "Surface-COD"
-    case "Prepaid":
-        return "Surface-Prepaid"
+        return "COD"
+    case "PREPAID":
+        return "PREPAID"
     default:
-        return "Surface"
+        return "PREPAID"
     }
 }
 
-func calculateCODCharges(paymentMode string) float64 {
-    if paymentMode == "COD" {
-        return 50.0 // Example COD charge, adjust based on actual Delhivery rates
+func getCODAmount(paymentType string, orderAmount float64) float64 {
+    if paymentType == "COD" {
+        return orderAmount
     }
-    return 0.0
+    return 0
 }
 
-func estimateDeliveryDays(serviceType string) int32 {
-    // You might want to adjust these estimates based on your experience with Delhivery
-    return 4 // Default to 4 days for Surface
-}
-func (d *DelhiveryProvider) IsAvailable(ctx context.Context, originPin, destPin int32) (bool, error) {
-    // Implementation for checking serviceability
-    return true, nil
-}
-
-func (d *DelhiveryProvider) GetProviderInfo() *pb.CourierInfo {
-    return &pb.CourierInfo{
-        CourierCode: "DELHIVERY",
-        CourierName: "Delhivery",
-        SupportedServices: []string{"express", "surface"},
+func getMappedStatus(status string) string {
+    statusMap := map[string]string{
+        "PU": "PICKUP",
+        "PP": "PENDING_PICKUP",
+        "IT": "IN_TRANSIT",
+        "OD": "OUT_FOR_DELIVERY",
+        "DL": "DELIVERED",
+        "RT": "RTO",
+        "UD": "UNDELIVERED",
+        "EX": "EXCEPTION",
     }
+
+    if mapped, exists := statusMap[status]; exists {
+        return mapped
+    }
+    return status
 }

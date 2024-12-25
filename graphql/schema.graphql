@@ -201,29 +201,88 @@ input OrderInput {
     lineItems: [OrderLineItemInput!]!
 }
 
-#shipping types
-input ShippingRateInput {
-  originPincode: Int!
-  destinationPincode: Int!
-  weight: Int!
-  courierCodes: [String!]
-  paymentMode: PaymentMode!
-  dimensions: [PackageDimensionInput!]
-}
+#shipping 
 
-input PackageDimensionInput {
-  length: Float!
-  width: Float!
-  height: Float!
+
+input ShippingRateInput {
+  origin_pincode: Int!
+  destination_pincode: Int!
   weight: Float!
+  length: Float
+  width: Float
+  height: Float
+  payment_mode: PaymentMode!
+  collectable_amount: Float!
+  courier_codes: [String!]
 }
 
 input AvailabilityInput {
-  originPincode: Int!
-  destinationPincode: Int!
+  origin_pincode: Int!
+  destination_pincode: Int!
+  weight: Float!
+  payment_mode: PaymentMode
+}
+
+input CreateShipmentInput {
+  courier_code: String!
+  order_number: String!
+  payment_type: PaymentType!
+  package_weight: Float!
+  package_length: Float!
+  package_breadth: Float!
+  package_height: Float!
+  order_amount: Float!
+  collectable_amount: Float!
+  consignee: AddressInput!
+  pickup: AddressInput!
+  items: [OrderItemInput!]!
+  auto_pickup: Boolean
+  return_info: ReturnInfoInput
+}
+
+input AddressInput {
+  name: String!
+  company_name: String
+  phone: String!
+  email: String
+  address_line1: String!
+  address_line2: String
+  landmark: String
+  city: String!
+  state: String!
+  country: String
+  pincode: String!
+  gstin: String
+}
+
+input OrderItemInput {
+  sku: String!
+  name: String!
+  quantity: Int!
+  price: Float!
+  hsn_code: String
+  category: String
+  actual_weight: Float
+}
+
+input ReturnInfoInput {
+  address: AddressInput!
+  awb_number: String
+  return_reason: String
+  return_comment: String
+}
+
+input TrackingInput {
+  courier_code: String!
+  tracking_id: String!
 }
 
 enum PaymentMode {
+  COD
+  PREPAID
+}
+
+enum PaymentType {
   COD
   PREPAID
 }
@@ -235,31 +294,47 @@ type ShippingRateResponse {
 }
 
 type CourierRate {
-  courierCode: String!
-  courierName: String!
-  serviceType: String!
-  rateDetails: RateDetails!
-  estimatedDays: Int!
-}
-
-type RateDetails {
-  totalAmount: Float!
-  grossAmount: Float!
-  taxAmount: Float!
-  codCharges: Float!
-  fuelSurcharge: Float!
+  courier_code: String!
+  courier_name: String!
+  base_charge: Float!
+  fuel_surcharge: Float!
+  cod_charge: Float!
+  handling_charge: Float!
+  total_charge: Float!
+  expected_days: Int!
 }
 
 type CourierAvailabilityResponse {
   success: Boolean!
-  availableCouriers: [CourierInfo!]!
+  available_couriers: [CourierInfo!]
   error: String
 }
 
 type CourierInfo {
-  courierCode: String!
-  courierName: String!
-  supportedServices: [String!]!
+  code: String!
+  name: String!
+  description: String
+}
+
+type ShipmentResponse {
+  success: Boolean!
+  tracking_id: String
+  courier_awb: String
+  label: String
+  error: String
+}
+
+type TrackingResponse {
+  success: Boolean!
+  events: [TrackingEvent!]
+  error: String
+}
+
+type TrackingEvent {
+  status: String!
+  location: String!
+  timestamp: String!
+  description: String!
 }
 
 type Mutation {
@@ -272,8 +347,10 @@ type Mutation {
     
 
     #shipping part starts here
-    calculateShippingRates(input: ShippingRateInput!): ShippingRateResponse!
-    getAvailableCouriers(input: AvailabilityInput!): CourierAvailabilityResponse! 
+      calculateShippingRates(input: ShippingRateInput!): ShippingRateResponse!
+  getAvailableCouriers(input: AvailabilityInput!): CourierAvailabilityResponse!
+  createShipment(input: CreateShipmentInput!): ShipmentResponse!
+  trackShipment(input: TrackingInput!): TrackingResponse!
 
 }
 
@@ -283,6 +360,7 @@ type Query {
     getOrdersForAccount(accountId: String!, pagination: OrderPaginationInput): OrderConnection!
     getOrder(id: String!): Order
     getWalletDetails(input: GetWalletDetailsInput!): WalletDetailsResponse!
+    ping: String!
 } 
 
 type Accounts {

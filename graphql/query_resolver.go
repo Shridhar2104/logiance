@@ -146,3 +146,7 @@ func (r *queryResolver) GetWalletDetails(ctx context.Context, input GetWalletDet
         Errors: nil,
     }, nil
 }
+// Ping is a simple health check method
+func (r *queryResolver) Ping(ctx context.Context) (string, error) {
+    return "pong", nil
+}
