@@ -1,77 +1,149 @@
 package account
 
 import (
-	"context"
-	"time"
+    "context"
+    "time"
 
-	"github.com/google/uuid"
-	// "golang.org/x/crypto/bcrypt" // Import for password hashing
+    "github.com/google/uuid"
 )
 
-// Service interface defines the operations provided by the Account service.
+// Extend Service interface with bank account operations
 type Service interface {
-	CreateAccount(ctx context.Context, name string, password string, email string) (*Account, error) // Create a new account
-	LoginAccount(ctx context.Context, email string, password string) (*Account, error)               // Login and validate account
-	ListAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error)                  // List accounts with pagination
+    CreateAccount(ctx context.Context, name string, password string, email string) (*Account, error)
+    LoginAccount(ctx context.Context, email string, password string) (*Account, error)
+    ListAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error)
+    // New bank account methods
+    AddBankAccount(ctx context.Context, userID string, accountNumber string, beneficiaryName string, ifscCode string, bankName string) (*BankAccount, error)
+    GetBankAccount(ctx context.Context, userID string) (*BankAccount, error)
+    UpdateBankAccount(ctx context.Context, userID string, accountNumber string, beneficiaryName string, ifscCode string, bankName string) (*BankAccount, error)
+    DeleteBankAccount(ctx context.Context, userID string) error
 }
 
-// Account struct represents the Account entity in the system.
+// Keep existing Account struct
 type Account struct {
-	ID        uuid.UUID `json:"id"`         // Unique identifier for the account
-	Name      string    `json:"name"`       // Account holder's name
-	Password  string    `json:"password"`   // Account password (hashed ideally)
-	Email     string    `json:"email"`      // Account holder's email
-	CreatedAt time.Time `json:"created_at"` // Timestamp when the account was created
-	UpdatedAt time.Time `json:"updated_at"` // Timestamp when the account was last updated
+    ID        uuid.UUID `json:"id"`
+    Name      string    `json:"name"`
+    Password  string    `json:"password"`
+    Email     string    `json:"email"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
 }
 
-// accountService is a concrete implementation of the Service interface.
+// Add BankAccount struct
+type BankAccount struct {
+    UserID          string    `json:"user_id"`
+    AccountNumber   string    `json:"account_number"`
+    BeneficiaryName string    `json:"beneficiary_name"`
+    IFSCCode        string    `json:"ifsc_code"`
+    BankName        string    `json:"bank_name"`
+    CreatedAt       time.Time `json:"created_at"`
+    UpdatedAt       time.Time `json:"updated_at"`
+}
+
 type accountService struct {
-	repo Repository // Dependency on the Repository interface for database operations
+    repo Repository
 }
 
-// NewAccountService is a constructor for accountService, returning a Service implementation.
 func NewAccountService(repo Repository) Service {
-	return &accountService{repo}
+    return &accountService{repo}
 }
 
-// CreateAccount creates a new account with the provided details and saves it in the database.
+// Keep existing account methods (CreateAccount, LoginAccount, ListAccounts)...
+// [Your existing account methods remain unchanged]
+
+// Add new bank account methods
+func (s *accountService) AddBankAccount(
+    ctx context.Context,
+    userID string,
+    accountNumber string,
+    beneficiaryName string,
+    ifscCode string,
+    bankName string,
+) (*BankAccount, error) {
+    bankAccount := &BankAccount{
+        UserID:          userID,
+        AccountNumber:   accountNumber,
+        BeneficiaryName: beneficiaryName,
+        IFSCCode:        ifscCode,
+        BankName:        bankName,
+        CreatedAt:       time.Now(),
+        UpdatedAt:       time.Now(),
+    }
+
+    err := s.repo.AddBankAccount(ctx, *bankAccount)
+    if err != nil {
+        return nil, err
+    }
+
+    return bankAccount, nil
+}
+
+func (s *accountService) GetBankAccount(ctx context.Context, userID string) (*BankAccount, error) {
+    return s.repo.GetBankAccount(ctx, userID)
+}
+
+func (s *accountService) UpdateBankAccount(
+    ctx context.Context,
+    userID string,
+    accountNumber string,
+    beneficiaryName string,
+    ifscCode string,
+    bankName string,
+) (*BankAccount, error) {
+    bankAccount := &BankAccount{
+        UserID:          userID,
+        AccountNumber:   accountNumber,
+        BeneficiaryName: beneficiaryName,
+        IFSCCode:        ifscCode,
+        BankName:        bankName,
+        UpdatedAt:       time.Now(),
+    }
+
+    err := s.repo.UpdateBankAccount(ctx, *bankAccount)
+    if err != nil {
+        return nil, err
+    }
+
+    return bankAccount, nil
+}
+
+func (s *accountService) DeleteBankAccount(ctx context.Context, userID string) error {
+    return s.repo.DeleteBankAccount(ctx, userID)
+}
+
+// Keep existing CreateAccount method
 func (s *accountService) CreateAccount(ctx context.Context, name string, password string, email string) (*Account, error) {
-	a := &Account{
-		ID:        uuid.New(),     // Generate a unique identifier using the UUID package
-		Name:      name,           // Assign the name provided
-		Password:  password,       // Directly pass the plain password for hashing in repository
-		Email:     email,          // Assign the email provided
-		CreatedAt: time.Now(),     // Set the current timestamp as the creation time
-		UpdatedAt: time.Now(),     // Set the current timestamp as the update time
-	}
+    a := &Account{
+        ID:        uuid.New(),
+        Name:      name,
+        Password:  password,
+        Email:     email,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
 
-	// Use the repository's PutAccount method to save the account in the database.
-	if err := s.repo.PutAccount(ctx, *a); err != nil {
-		return nil, err // Return an error if the database operation fails
-	}
+    if err := s.repo.PutAccount(ctx, *a); err != nil {
+        return nil, err
+    }
 
-	return a, nil // Return the created account on success
+    return a, nil
 }
 
-// LoginAccount validates the email and password and returns the account if valid.
+// Keep existing LoginAccount method
 func (s *accountService) LoginAccount(ctx context.Context, email string, password string) (*Account, error) {
-	// Use the repository to fetch the account by email and validate the password
-	account, err := s.repo.GetAccountByEmailAndPassword(ctx, email, password)
-	if err != nil {
-		return nil, err // Return an error if validation fails
-	}
+    account, err := s.repo.GetAccountByEmailAndPassword(ctx, email, password)
+    if err != nil {
+        return nil, err
+    }
 
-	return account, nil // Return the account on successful validation
+    return account, nil
 }
 
-// ListAccounts retrieves a list of accounts with support for pagination.
+// Keep existing ListAccounts method
 func (s *accountService) ListAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error) {
-	// Apply a limit of 100 accounts per request if the take value exceeds 100 or is not specified.
-	if take > 100 || (skip == 0 && take == 0) {
-		take = 100
-	}
+    if take > 100 || (skip == 0 && take == 0) {
+        take = 100
+    }
 
-	// Delegate the task to the repository's ListAccounts method.
-	return s.repo.ListAccounts(ctx, skip, take)
+    return s.repo.ListAccounts(ctx, skip, take)
 }

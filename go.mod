@@ -3,7 +3,7 @@ module github.com/Shridhar2104/logilo
 go 1.23
 
 require (
-	github.com/99designs/gqlgen v0.17.60
+	github.com/99designs/gqlgen v0.17.61
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
@@ -12,6 +12,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.20
 	golang.org/x/crypto v0.31.0
 	google.golang.org/grpc v1.69.2
+	golang.org/x/crypto v0.31.0
+	google.golang.org/grpc v1.68.1
 )
 
 require (
@@ -38,10 +40,10 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/tinrab/retry v1.0.0
-	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
+	golang.org/x/net v0.29.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/protobuf v1.35.2
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12

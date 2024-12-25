@@ -1,3 +1,4 @@
+// graphql/graph.go
 package main
 
 import (
@@ -109,8 +110,6 @@ func (r *courierInfoResolver) Name(ctx context.Context, obj *models.CourierInfo)
 type courierRateResolver struct {
     server *Server
 }
-
-
 
 
 func (r *courierRateResolver) CodCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {

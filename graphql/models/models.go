@@ -2,14 +2,36 @@ package models
 
 import "time"
 
-type Account struct {
-    ID        string     `json:"id"`
-    Name      string     `json:"name"`
-    Password  string     `json:"password"`
-    Email     string     `json:"email"`
-    Orders    []Order    `json:"orders"`
-    ShopNames []ShopName `json:"shopnames"`
+// Add BankAccount model
+type BankAccount struct {
+    UserID          string    `json:"userId"`
+    AccountNumber   string    `json:"accountNumber"`
+    BeneficiaryName string    `json:"beneficiaryName"`
+    IFSCCode        string    `json:"ifscCode"`
+    BankName        string    `json:"bankName"`
+    CreatedAt       time.Time `json:"createdAt"`
+    UpdatedAt       time.Time `json:"updatedAt"`
 }
+
+// Add BankAccountInput model
+type BankAccountInput struct {
+    AccountNumber   string `json:"accountNumber"`
+    BeneficiaryName string `json:"beneficiaryName"`
+    IFSCCode        string `json:"ifscCode"`
+    BankName        string `json:"bankName"`
+}
+
+// Update Account model to include BankAccount
+type Account struct {
+    ID         string      `json:"id"`
+    Name       string      `json:"name"`
+    Password   string      `json:"password"`
+    Email      string      `json:"email"`
+    Orders     []Order     `json:"orders"`
+    ShopNames  []ShopName  `json:"shopnames"`
+    BankAccount *BankAccount `json:"bankAccount,omitempty"`
+}
+
 
 type ShopName struct {
     Shopname string `json:"shopname"`

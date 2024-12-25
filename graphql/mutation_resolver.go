@@ -152,3 +152,63 @@ func (r *mutationResolver) TrackShipment(ctx context.Context, input TrackingInpu
     return r.server.Shipping().TrackShipment(ctx, input)
 }
 
+
+
+// Add new bank account mutations
+func (r *mutationResolver) AddBankAccount(ctx context.Context, userID string, input BankAccountInput) (*BankAccount, error) {
+    bankAccount := &account.BankAccount{
+        UserID:          userID,
+        AccountNumber:   input.AccountNumber,
+        BeneficiaryName: input.BeneficiaryName,
+        IFSCCode:        input.IfscCode,
+        BankName:        input.BankName,
+    }
+ 
+    resp, err := r.server.accountClient.AddBankAccount(ctx, bankAccount)
+    if err != nil {
+        return nil, fmt.Errorf("failed to add bank account: %w", err)
+    }
+ 
+    return &BankAccount{
+        UserID:          resp.UserID,
+        AccountNumber:   resp.AccountNumber,
+        BeneficiaryName: resp.BeneficiaryName,
+        IfscCode:        resp.IFSCCode,
+        BankName:        resp.BankName,
+        // CreatedAt:       resp.CreatedAt,
+        // UpdatedAt:       resp.UpdatedAt,
+    }, nil
+ }
+ 
+ func (r *mutationResolver) UpdateBankAccount(ctx context.Context, userID string, input BankAccountInput) (*BankAccount, error) {
+    bankAccount := &account.BankAccount{
+        UserID:          userID,
+        AccountNumber:   input.AccountNumber,
+        BeneficiaryName: input.BeneficiaryName,
+        IFSCCode:        input.IfscCode,
+        BankName:        input.BankName,
+    }
+ 
+    resp, err := r.server.accountClient.UpdateBankAccount(ctx, bankAccount)
+    if err != nil {
+        return nil, fmt.Errorf("failed to update bank account: %w", err)
+    }
+ 
+    return &BankAccount{
+        UserID:          resp.UserID,
+        AccountNumber:   resp.AccountNumber,
+        BeneficiaryName: resp.BeneficiaryName,
+        IfscCode:        resp.IFSCCode,
+        BankName:        resp.BankName,
+        // CreatedAt:       resp.CreatedAt,
+        // UpdatedAt:       resp.UpdatedAt,
+    }, nil
+ }
+ 
+ func (r *mutationResolver) DeleteBankAccount(ctx context.Context, userID string) (bool, error) {
+    err := r.server.accountClient.DeleteBankAccount(ctx, userID)
+    if err != nil {
+        return false, fmt.Errorf("failed to delete bank account: %w", err)
+    }
+    return true, nil
+ }

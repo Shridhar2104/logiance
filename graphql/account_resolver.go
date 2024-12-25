@@ -9,6 +9,29 @@ type accountResolver struct {
     server *Server
 }
 
+
+// Add this function to your existing accountResolver
+func (r *accountResolver) BankAccount(ctx context.Context, obj *models.Account) (*BankAccount, error) {
+    if obj.ID == "" {
+        return nil, nil
+    }
+    
+    bankAccount, err := r.server.accountClient.GetBankAccount(ctx, obj.ID)
+    if err != nil {
+        return nil, err
+    }
+    
+    return &BankAccount{
+        UserID:          bankAccount.UserID,
+        AccountNumber:   bankAccount.AccountNumber,
+        BeneficiaryName: bankAccount.BeneficiaryName,
+        IfscCode:        bankAccount.IFSCCode,
+        BankName:        bankAccount.BankName,
+        // CreatedAt:       bankAccount.CreatedAt,
+        // UpdatedAt:       bankAccount.UpdatedAt,
+    }, nil
+}
+
 // Orders fetch orders for all shopnames for the given account with pagination
 func (r *accountResolver) Orders(ctx context.Context, obj *models.Account) ([]*models.Order, error) {
     // Use the shopify client to get orders for this account

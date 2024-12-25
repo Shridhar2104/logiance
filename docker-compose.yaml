@@ -87,8 +87,17 @@ services:
       - account_postgres_data:/var/lib/postgresql/data
     networks:
       - logilo-network
+    ports:
+      - "5432:5432"  # Adding port mapping for debugging
+    healthcheck:     # Adding healthcheck
+      test: ["CMD-SHELL", "pg_isready -U account_user_dev -d account_db_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - .env.development 
     restart: always
-
+    
   account-service:
     build:
       context: .
