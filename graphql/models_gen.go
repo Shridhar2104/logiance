@@ -20,9 +20,43 @@ type Accounts struct {
 	Orders []*models.Order `json:"orders"`
 }
 
+type AddressInput struct {
+	Name         string  `json:"name"`
+	CompanyName  *string `json:"company_name,omitempty"`
+	Phone        string  `json:"phone"`
+	Email        *string `json:"email,omitempty"`
+	AddressLine1 string  `json:"address_line1"`
+	AddressLine2 *string `json:"address_line2,omitempty"`
+	Landmark     *string `json:"landmark,omitempty"`
+	City         string  `json:"city"`
+	State        string  `json:"state"`
+	Country      *string `json:"country,omitempty"`
+	Pincode      string  `json:"pincode"`
+	Gstin        *string `json:"gstin,omitempty"`
+}
+
 type AvailabilityInput struct {
-	OriginPincode      int `json:"originPincode"`
-	DestinationPincode int `json:"destinationPincode"`
+	OriginPincode      int          `json:"origin_pincode"`
+	DestinationPincode int          `json:"destination_pincode"`
+	Weight             float64      `json:"weight"`
+	PaymentMode        *PaymentMode `json:"payment_mode,omitempty"`
+}
+
+type CreateShipmentInput struct {
+	CourierCode       string            `json:"courier_code"`
+	OrderNumber       string            `json:"order_number"`
+	PaymentType       PaymentType       `json:"payment_type"`
+	PackageWeight     float64           `json:"package_weight"`
+	PackageLength     float64           `json:"package_length"`
+	PackageBreadth    float64           `json:"package_breadth"`
+	PackageHeight     float64           `json:"package_height"`
+	OrderAmount       float64           `json:"order_amount"`
+	CollectableAmount float64           `json:"collectable_amount"`
+	Consignee         *AddressInput     `json:"consignee"`
+	Pickup            *AddressInput     `json:"pickup"`
+	Items             []*OrderItemInput `json:"items"`
+	AutoPickup        *bool             `json:"auto_pickup,omitempty"`
+	ReturnInfo        *ReturnInfoInput  `json:"return_info,omitempty"`
 }
 
 type Customer struct {
@@ -77,6 +111,16 @@ type OrderInput struct {
 	LineItems []*OrderLineItemInput `json:"lineItems"`
 }
 
+type OrderItemInput struct {
+	Sku          string   `json:"sku"`
+	Name         string   `json:"name"`
+	Quantity     int      `json:"quantity"`
+	Price        float64  `json:"price"`
+	HsnCode      *string  `json:"hsn_code,omitempty"`
+	Category     *string  `json:"category,omitempty"`
+	ActualWeight *float64 `json:"actual_weight,omitempty"`
+}
+
 type OrderLineItemInput struct {
 	ID          string  `json:"id"`
 	Amount      float64 `json:"amount"`
@@ -93,13 +137,6 @@ type OrderPaginationInput struct {
 type OrderSort struct {
 	Field     OrderSortField `json:"field"`
 	Direction SortDirection  `json:"direction"`
-}
-
-type PackageDimensionInput struct {
-	Length float64 `json:"length"`
-	Width  float64 `json:"width"`
-	Height float64 `json:"height"`
-	Weight float64 `json:"weight"`
 }
 
 type PageInfo struct {
@@ -124,13 +161,49 @@ type RechargeWalletInput struct {
 	Amount    float64 `json:"amount"`
 }
 
+type ReturnInfoInput struct {
+	Address       *AddressInput `json:"address"`
+	AwbNumber     *string       `json:"awb_number,omitempty"`
+	ReturnReason  *string       `json:"return_reason,omitempty"`
+	ReturnComment *string       `json:"return_comment,omitempty"`
+}
+
+type ShipmentResponse struct {
+	Success    bool    `json:"success"`
+	TrackingID *string `json:"tracking_id,omitempty"`
+	CourierAwb *string `json:"courier_awb,omitempty"`
+	Label      *string `json:"label,omitempty"`
+	Error      *string `json:"error,omitempty"`
+}
+
 type ShippingRateInput struct {
-	OriginPincode      int                      `json:"originPincode"`
-	DestinationPincode int                      `json:"destinationPincode"`
-	Weight             int                      `json:"weight"`
-	CourierCodes       []string                 `json:"courierCodes,omitempty"`
-	PaymentMode        PaymentMode              `json:"paymentMode"`
-	Dimensions         []*PackageDimensionInput `json:"dimensions,omitempty"`
+	OriginPincode      int         `json:"origin_pincode"`
+	DestinationPincode int         `json:"destination_pincode"`
+	Weight             float64     `json:"weight"`
+	Length             *float64    `json:"length,omitempty"`
+	Width              *float64    `json:"width,omitempty"`
+	Height             *float64    `json:"height,omitempty"`
+	PaymentMode        PaymentMode `json:"payment_mode"`
+	CollectableAmount  float64     `json:"collectable_amount"`
+	CourierCodes       []string    `json:"courier_codes,omitempty"`
+}
+
+type TrackingEvent struct {
+	Status      string `json:"status"`
+	Location    string `json:"location"`
+	Timestamp   string `json:"timestamp"`
+	Description string `json:"description"`
+}
+
+type TrackingInput struct {
+	CourierCode string `json:"courier_code"`
+	TrackingID  string `json:"tracking_id"`
+}
+
+type TrackingResponse struct {
+	Success bool             `json:"success"`
+	Events  []*TrackingEvent `json:"events,omitempty"`
+	Error   *string          `json:"error,omitempty"`
 }
 
 type WalletDetails struct {
@@ -234,6 +307,47 @@ func (e *PaymentMode) UnmarshalGQL(v interface{}) error {
 }
 
 func (e PaymentMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PaymentType string
+
+const (
+	PaymentTypeCod     PaymentType = "COD"
+	PaymentTypePrepaid PaymentType = "PREPAID"
+)
+
+var AllPaymentType = []PaymentType{
+	PaymentTypeCod,
+	PaymentTypePrepaid,
+}
+
+func (e PaymentType) IsValid() bool {
+	switch e {
+	case PaymentTypeCod, PaymentTypePrepaid:
+		return true
+	}
+	return false
+}
+
+func (e PaymentType) String() string {
+	return string(e)
+}
+
+func (e *PaymentType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PaymentType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PaymentType", str)
+	}
+	return nil
+}
+
+func (e PaymentType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

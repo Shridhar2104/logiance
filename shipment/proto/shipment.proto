@@ -5,61 +5,131 @@ package shipment;
 option go_package = "./proto";
 
 service ShipmentService {
-  rpc CalculateRates(RateRequest) returns (MultiRateResponse) {}
-  rpc GetAvailableCouriers(AvailabilityRequest) returns (CourierListResponse) {}
+    rpc CalculateRates(RateRequest) returns (MultiRateResponse) {}
+    rpc GetAvailableCouriers(AvailabilityRequest) returns (CourierListResponse) {}
+    rpc CreateShipment(CreateShipmentRequest) returns (ShipmentResponse) {}
+    rpc TrackShipment(TrackingRequest) returns (TrackingResponse) {}
 }
+
 
 message RateRequest {
-  int32 origin_pincode = 1;
-  int32 destination_pincode = 2;
-  int32 weight = 3;  // in grams
-  repeated string courier_codes = 4; // Optional: specific couriers to check
-  string payment_mode = 5; // COD/Prepaid
-  repeated Package dimensions = 6;
-}
-
-message Package {
-  float length = 1;
-  float width = 2;
-  float height = 3;
-  float weight = 4;
-}
-
-message AvailabilityRequest {
-  int32 origin_pincode = 1;
-  int32 destination_pincode = 2;
-}
-
-message CourierListResponse {
-  bool success = 1;
-  repeated CourierInfo available_couriers = 2;
-  string error = 3;
-}
-
-message CourierInfo {
-  string courier_code = 1;
-  string courier_name = 2;
-  repeated string supported_services = 3; // express, surface, etc.
-}
-
-message MultiRateResponse {
-  bool success = 1;
-  repeated CourierRate rates = 2;
-  string error = 3;
+    string origin_pincode = 1;
+    string destination_pincode = 2;
+    double weight = 3;
+    double length = 4;
+    double width = 5;
+    double height = 6;
+    string payment_mode = 7;
+    double collectable_amount = 8;
+    repeated string courier_codes = 9;
 }
 
 message CourierRate {
-  string courier_code = 1;
-  string courier_name = 2;
-  string service_type = 3;
-  RateData rate_details = 4;
-  int32 estimated_days = 5;
+    string courier_code = 1;
+    double base_charge = 2;
+    double fuel_surcharge = 3;
+    double cod_charge = 4;
+    double handling_charge = 5;
+    double total_charge = 6;
+    int32 expected_days = 7;
 }
 
-message RateData {
-  double total_amount = 1;
-  double gross_amount = 2;
-  double tax_amount = 3;
-  double cod_charges = 4;
-  double fuel_surcharge = 5;
+message MultiRateResponse {
+    bool success = 1;
+    repeated CourierRate rates = 2;
+    string error = 3;
+}
+
+message AvailabilityRequest {
+    string origin_pincode = 1;
+    string destination_pincode = 2;
+    double weight = 3;
+    string payment_mode = 4;
+}
+
+message CourierInfo {
+    string code = 1;
+    string name = 2;
+    string description = 3;
+}
+
+message CourierListResponse {
+    bool success = 1;
+    repeated CourierInfo available_couriers = 2;
+    string error = 3;
+}
+
+message Address {
+    string name = 1;
+    string company_name = 2;
+    string phone = 3;
+    string email = 4;
+    string address_line1 = 5;
+    string address_line2 = 6;
+    string landmark = 7;
+    string city = 8;
+    string state = 9;
+    string country = 10;
+    string pincode = 11;
+    string gstin = 12;
+}
+
+message OrderItem {
+    string sku = 1;
+    string name = 2;
+    int32 quantity = 3;
+    double price = 4;
+    string hsn_code = 5;
+    string category = 6;
+    double actual_weight = 7;
+}
+
+message CreateShipmentRequest {
+    string courier_code = 1;
+    string order_number = 2;
+    string payment_type = 3;
+    double package_weight = 4;
+    double package_length = 5;
+    double package_breadth = 6;
+    double package_height = 7;
+    double order_amount = 8;
+    double collectable_amount = 9;
+    Address consignee = 10;
+    Address pickup = 11;
+    repeated OrderItem items = 12;
+    bool auto_pickup = 13;
+    ReturnInfo return_info = 14;
+}
+
+message ReturnInfo {
+    Address address = 1;
+    string awb_number = 2;
+    string return_reason = 3;
+    string return_comment = 4;
+}
+
+message ShipmentResponse {
+    bool success = 1;
+    string tracking_id = 2;
+    string courier_awb = 3;
+    string label = 4;
+    string error = 5;
+}
+
+message TrackingRequest {
+    string courier_code = 1;
+    string tracking_id = 2;
+}
+
+message TrackingEvent {
+    string status = 1;
+    string location = 2;
+    string timestamp = 3;
+    string description = 4;
+}
+
+message TrackingResponse {
+    bool success = 1;
+    repeated TrackingEvent events = 2;
+    string error = 3;
 }

@@ -1,13 +1,15 @@
 package main
 
 import (
-    "github.com/99designs/gqlgen/graphql"
-    "github.com/Shridhar2104/logilo/account"
-    "github.com/Shridhar2104/logilo/shopify"
-    "github.com/Shridhar2104/logilo/payment"
+	"context"
 	"log"
 
-	
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/Shridhar2104/logilo/account"
+	"github.com/Shridhar2104/logilo/graphql/models"
+	"github.com/Shridhar2104/logilo/payment"
+	"github.com/Shridhar2104/logilo/shopify"
+
 	pb "github.com/Shridhar2104/logilo/shipment/proto"
 
 	"google.golang.org/grpc"
@@ -17,6 +19,8 @@ type Server struct {
     shopifyClient *shopify.Client
     paymentClient *payment.Client
     shipmentClient pb.ShipmentServiceClient
+    shippingResolver *ShippingResolver
+
 }
 
 
@@ -56,7 +60,10 @@ func NewGraphQLServer(accountUrl, shopifyUrl, shipmentUrl, paymentUrl string) (*
         shopifyClient:  shopifyClient,
         shipmentClient: shipmentClient,
         paymentClient: paymentClient,
+    
+
     }
+    server.shippingResolver = NewShippingResolver(shipmentClient)
     
     // Verify client initialization
     log.Printf("Server initialized with clients - Account: %v, Shopify: %v, Shipment: %v", 
@@ -83,10 +90,65 @@ func (s *Server) Account() AccountResolver {
 func (s *Server) Order() OrderResolver {
     return &orderResolver{s}
 }
-
-func (s *Server) Shipping() ShippingResolver {
-    return &shippingResolver{s}
+func (s *Server) Shipping() *ShippingResolver {
+    return s.shippingResolver
 }
+type courierInfoResolver struct {
+    server *Server
+}
+func (r *Server) CourierInfo() CourierInfoResolver {
+    return &courierInfoResolver{r}
+}
+func (r *courierInfoResolver) Code(ctx context.Context, obj *models.CourierInfo) (string, error) {
+    return obj.CourierCode, nil
+}
+
+func (r *courierInfoResolver) Name(ctx context.Context, obj *models.CourierInfo) (string, error) {
+    return obj.CourierName, nil
+}
+type courierRateResolver struct {
+    server *Server
+}
+
+
+func (r *Server) CourierRate() CourierRateResolver {
+    return &courierRateResolver{r}
+}
+
+func (r *courierRateResolver) CodCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
+    return obj.CodCharge, nil
+}
+func (r *courierRateResolver) FuelCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
+    return obj.FuelSurcharge, nil
+}
+func (r *courierRateResolver) ExpectedDays(ctx context.Context, obj *models.CourierRate) (int, error) {
+    return (obj.ExpectedDays), nil
+}
+func (r *courierRateResolver) HandlingCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
+    return ((obj.HandlingCharge)), nil
+}
+func (r *courierRateResolver) TotalCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
+    return ((obj.TotalCharge)), nil
+}
+
+
+func (r *courierRateResolver) FuelSurcharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
+    return obj.FuelSurcharge, nil
+}
+func (r *courierRateResolver) BaseCharge(ctx context.Context, obj *models.CourierRate) (float64, error) {
+    return obj.BaseCharge, nil
+}
+
+
+
+func (r *courierInfoResolver) Description(ctx context.Context, obj *models.CourierInfo) (*string, error) {
+    return &obj.Description, nil
+}
+
+func (r *courierInfoResolver) SupportedServices(ctx context.Context, obj *models.CourierInfo) ([]string, error) {
+    return obj.SupportedServices, nil
+}
+
 
 func (s *Server) ToNewExecutableSchema() graphql.ExecutableSchema {
     return NewExecutableSchema(Config{

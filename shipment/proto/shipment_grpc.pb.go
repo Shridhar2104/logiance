@@ -23,6 +23,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ShipmentService_CalculateRates_FullMethodName       = "/shipment.ShipmentService/CalculateRates"
 	ShipmentService_GetAvailableCouriers_FullMethodName = "/shipment.ShipmentService/GetAvailableCouriers"
+	ShipmentService_CreateShipment_FullMethodName       = "/shipment.ShipmentService/CreateShipment"
+	ShipmentService_TrackShipment_FullMethodName        = "/shipment.ShipmentService/TrackShipment"
 )
 
 // ShipmentServiceClient is the client API for ShipmentService service.
@@ -31,6 +33,8 @@ const (
 type ShipmentServiceClient interface {
 	CalculateRates(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*MultiRateResponse, error)
 	GetAvailableCouriers(ctx context.Context, in *AvailabilityRequest, opts ...grpc.CallOption) (*CourierListResponse, error)
+	CreateShipment(ctx context.Context, in *CreateShipmentRequest, opts ...grpc.CallOption) (*ShipmentResponse, error)
+	TrackShipment(ctx context.Context, in *TrackingRequest, opts ...grpc.CallOption) (*TrackingResponse, error)
 }
 
 type shipmentServiceClient struct {
@@ -61,12 +65,34 @@ func (c *shipmentServiceClient) GetAvailableCouriers(ctx context.Context, in *Av
 	return out, nil
 }
 
+func (c *shipmentServiceClient) CreateShipment(ctx context.Context, in *CreateShipmentRequest, opts ...grpc.CallOption) (*ShipmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ShipmentResponse)
+	err := c.cc.Invoke(ctx, ShipmentService_CreateShipment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *shipmentServiceClient) TrackShipment(ctx context.Context, in *TrackingRequest, opts ...grpc.CallOption) (*TrackingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TrackingResponse)
+	err := c.cc.Invoke(ctx, ShipmentService_TrackShipment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ShipmentServiceServer is the server API for ShipmentService service.
 // All implementations must embed UnimplementedShipmentServiceServer
 // for forward compatibility.
 type ShipmentServiceServer interface {
 	CalculateRates(context.Context, *RateRequest) (*MultiRateResponse, error)
 	GetAvailableCouriers(context.Context, *AvailabilityRequest) (*CourierListResponse, error)
+	CreateShipment(context.Context, *CreateShipmentRequest) (*ShipmentResponse, error)
+	TrackShipment(context.Context, *TrackingRequest) (*TrackingResponse, error)
 	mustEmbedUnimplementedShipmentServiceServer()
 }
 
@@ -82,6 +108,12 @@ func (UnimplementedShipmentServiceServer) CalculateRates(context.Context, *RateR
 }
 func (UnimplementedShipmentServiceServer) GetAvailableCouriers(context.Context, *AvailabilityRequest) (*CourierListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAvailableCouriers not implemented")
+}
+func (UnimplementedShipmentServiceServer) CreateShipment(context.Context, *CreateShipmentRequest) (*ShipmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateShipment not implemented")
+}
+func (UnimplementedShipmentServiceServer) TrackShipment(context.Context, *TrackingRequest) (*TrackingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TrackShipment not implemented")
 }
 func (UnimplementedShipmentServiceServer) mustEmbedUnimplementedShipmentServiceServer() {}
 func (UnimplementedShipmentServiceServer) testEmbeddedByValue()                         {}
@@ -140,6 +172,42 @@ func _ShipmentService_GetAvailableCouriers_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ShipmentService_CreateShipment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateShipmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShipmentServiceServer).CreateShipment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShipmentService_CreateShipment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShipmentServiceServer).CreateShipment(ctx, req.(*CreateShipmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ShipmentService_TrackShipment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TrackingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ShipmentServiceServer).TrackShipment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ShipmentService_TrackShipment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ShipmentServiceServer).TrackShipment(ctx, req.(*TrackingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ShipmentService_ServiceDesc is the grpc.ServiceDesc for ShipmentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -154,6 +222,14 @@ var ShipmentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAvailableCouriers",
 			Handler:    _ShipmentService_GetAvailableCouriers_Handler,
+		},
+		{
+			MethodName: "CreateShipment",
+			Handler:    _ShipmentService_CreateShipment_Handler,
+		},
+		{
+			MethodName: "TrackShipment",
+			Handler:    _ShipmentService_TrackShipment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

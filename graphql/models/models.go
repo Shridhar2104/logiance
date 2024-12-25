@@ -194,12 +194,37 @@ type WalletOperationResponse struct {
     NewBalance float64  `json:"newBalance"`
     Errors     []*Error `json:"errors"`
 }
+
+
+// Enums
+type PaymentMode string
+const (
+    PaymentModeCOD     PaymentMode = "COD"
+    PaymentModePrepaid PaymentMode = "PREPAID"
+)
+
+type PaymentType string
+const (
+    PaymentTypeCOD     PaymentType = "COD"
+    PaymentTypePrepaid PaymentType = "PREPAID"
+)
+
+type NDRAction string
+const (
+    NDRActionRetry      NDRAction = "RETRY"
+    NDRActionReschedule NDRAction = "RESCHEDULE"
+    NDRActionRTO        NDRAction = "RTO"
+    NDRActionCancel     NDRAction = "CANCEL"
+)
+
+// Input Types
 type ShippingRateInput struct {
-    OriginPincode      int                    `json:"originPincode"`
-    DestinationPincode int                    `json:"destinationPincode"`
-    Weight             int                    `json:"weight"`
-    CourierCodes       []string               `json:"courierCodes,omitempty"`
-    PaymentMode        PaymentMode            `json:"paymentMode"`
+    OriginPincode      int                    `json:"origin_pincode"`
+    DestinationPincode int                    `json:"destination_pincode"`
+    Weight             float64                `json:"weight"`
+    CourierCodes       []string               `json:"courier_codes,omitempty"`
+    PaymentMode        PaymentMode            `json:"payment_mode"`
+    CollectableAmount  float64                `json:"collectable_amount"`
     Dimensions         []PackageDimensionInput `json:"dimensions,omitempty"`
 }
 
@@ -211,47 +236,151 @@ type PackageDimensionInput struct {
 }
 
 type AvailabilityInput struct {
-    OriginPincode      int `json:"originPincode"`
-    DestinationPincode int `json:"destinationPincode"`
+    OriginPincode      int     `json:"origin_pincode"`
+    DestinationPincode int     `json:"destination_pincode"`
+    Weight             float64 `json:"weight,omitempty"`
 }
 
-type PaymentMode string
+type CreateShipmentInput struct {
+    CourierCode       string         `json:"courier_code"`
+    OrderNumber       string         `json:"order_number"`
+    PaymentType       PaymentType    `json:"payment_type"`
+    PackageWeight     float64        `json:"package_weight"`
+    PackageLength     float64        `json:"package_length"`
+    PackageBreadth    float64        `json:"package_breadth"`
+    PackageHeight     float64        `json:"package_height"`
+    OrderAmount       float64        `json:"order_amount"`
+    CollectableAmount float64        `json:"collectable_amount"`
+    Consignee        Address        `json:"consignee"`
+    Pickup           Address        `json:"pickup"`
+    Items            []OrderItem    `json:"items"`
+}
 
-const (
-    PaymentModeCOD     PaymentMode = "COD"
-    PaymentModePREPAID PaymentMode = "PREPAID"
-)
+type Address struct {
+    Name         string `json:"name"`
+    CompanyName  string `json:"company_name,omitempty"`
+    AddressLine1 string `json:"address_line1"`
+    AddressLine2 string `json:"address_line2,omitempty"`
+    City         string `json:"city"`
+    State        string `json:"state"`
+    Pincode      string `json:"pincode"`
+    Phone        string `json:"phone"`
+    Email        string `json:"email,omitempty"`
+    GSTIN        string `json:"gstin,omitempty"`
+}
 
+type OrderItem struct {
+    Name     string  `json:"name"`
+    SKU      string  `json:"sku"`
+    Quantity int     `json:"quantity"`
+    Price    float64 `json:"price"`
+}
+
+type TrackingInput struct {
+    CourierCode string `json:"courier_code"`
+    TrackingID  string `json:"tracking_id"`
+}
+
+type CancelShipmentInput struct {
+    CourierCode string `json:"courier_code"`
+    TrackingID  string `json:"tracking_id"`
+    Reason      string `json:"reason"`
+}
+
+type NDRListInput struct {
+    CourierCode string `json:"courier_code"`
+    Page        int    `json:"page"`
+    Limit       int    `json:"limit"`
+}
+
+type NDRActionInput struct {
+    CourierCode string    `json:"courier_code"`
+    TrackingID  string    `json:"tracking_id"`
+    Action      NDRAction `json:"action"`
+    Remarks     string    `json:"remarks,omitempty"`
+}
+
+// Response Types
 type ShippingRateResponse struct {
     Success bool           `json:"success"`
     Rates   []*CourierRate `json:"rates,omitempty"`
-    Error   string        `json:"error,omitempty"`
+    Error   string         `json:"error,omitempty"`
 }
 
 type CourierRate struct {
-    CourierCode    string       `json:"courierCode"`
-    CourierName    string       `json:"courierName"`
-    ServiceType    string       `json:"serviceType"`
-    RateDetails    *RateDetails `json:"rateDetails"`
-    EstimatedDays  int         `json:"estimatedDays"`
+    CourierCode    string       `json:"courier_code"`
+    CourierName    string       `json:"courier_name"`
+    BaseCharge    float64       `json:"base_charge"`
+    FuelSurcharge    float64       `json:"fuel_charge"`
+    CodCharge       float64      `json:"cod_charge`
+    HandlingCharge float64          `json:"handling_charge"`
+    TotalCharge   float64 `json:"total_charge"`
+    ExpectedDays    int `json:"expected_days"`
 }
 
 type RateDetails struct {
-    TotalAmount    float64 `json:"totalAmount"`
-    GrossAmount    float64 `json:"grossAmount"`
-    TaxAmount      float64 `json:"taxAmount"`
-    CodCharges     float64 `json:"codCharges"`
-    FuelSurcharge  float64 `json:"fuelSurcharge"`
+    TotalAmount   float64 `json:"total_amount"`
+    BaseAmount    float64 `json:"base_amount"`
+    TaxAmount     float64 `json:"tax_amount"`
+    CodCharges    float64 `json:"cod_charges"`
+    FuelSurcharge float64 `json:"fuel_surcharge"`
 }
 
 type CourierAvailabilityResponse struct {
     Success           bool           `json:"success"`
-    AvailableCouriers []*CourierInfo `json:"availableCouriers"`
-    Error            string        `json:"error,omitempty"`
+    AvailableCouriers []*CourierInfo `json:"available_couriers,omitempty"`
+    Error            string         `json:"error,omitempty"`
 }
 
 type CourierInfo struct {
-    CourierCode       string   `json:"courierCode"`
-    CourierName       string   `json:"courierName"`
-    SupportedServices []string `json:"supportedServices"`
+    CourierCode       string   `json:"courier_code"`
+    CourierName       string   `json:"courier_name"`
+    Description       string   `json:"description,omitempty"`
+    SupportedServices []string `json:"supported_services,omitempty"`
+}
+
+type ShipmentResponse struct {
+    Success    bool   `json:"success"`
+    TrackingId string `json:"tracking_id,omitempty"`
+    CourierAwb string `json:"courier_awb,omitempty"`
+    Label      string `json:"label,omitempty"`
+    Error      string `json:"error,omitempty"`
+}
+
+type TrackingResponse struct {
+    Success bool             `json:"success"`
+    Events  []*TrackingEvent `json:"events,omitempty"`
+    Error   string           `json:"error,omitempty"`
+}
+
+type TrackingEvent struct {
+    Status      string `json:"status"`
+    Location    string `json:"location"`
+    Timestamp   string `json:"timestamp"`
+    Description string `json:"description"`
+}
+
+type CancelResponse struct {
+    Success bool   `json:"success"`
+    Error   string `json:"error,omitempty"`
+}
+
+type NDRListResponse struct {
+    Success   bool           `json:"success"`
+    Shipments []*NDRShipment `json:"shipments,omitempty"`
+    Error     string         `json:"error,omitempty"`
+}
+
+type NDRShipment struct {
+    TrackingID      string `json:"tracking_id"`
+    CourierAWB      string `json:"courier_awb"`
+    AttemptCount    int    `json:"attempt_count"`
+    LastAttemptDate string `json:"last_attempt_date"`
+    Reason          string `json:"reason"`
+    Status          string `json:"status"`
+}
+
+type NDRActionResponse struct {
+    Success bool   `json:"success"`
+    Error   string `json:"error,omitempty"`
 }
