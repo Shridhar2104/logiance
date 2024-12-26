@@ -35,7 +35,6 @@ services:
       - "8080:8080"
     env_file:
       - .env.development
-
   shipment-db:
     build:
       context: .
@@ -44,18 +43,20 @@ services:
       POSTGRES_USER: shipment_user_dev
       POSTGRES_PASSWORD: shipment_password_dev
       POSTGRES_DB: shipment_db_dev
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - shipment_postgres_data:/var/lib/postgresql/data
+      - ./.env.development:/app/.env.development
     networks:
       - logilo-network
     ports:
       - "5434:5432"
-    restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U shipment_user_dev -d shipment_db_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   shipment-service:
     build:
@@ -73,6 +74,9 @@ services:
       - logilo-network
     ports:
       - "50052:50052"
+    volumes:
+      - ./.env.development:/app/.env.development
+      - ./shipment/internal/database/migrations:/app/internal/database/migrations
     env_file:
       - .env.development
     restart: on-failure
