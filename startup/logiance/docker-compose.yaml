@@ -1,0 +1,183 @@
+version: '3.8'
+
+x-common-variables: &common-variables
+  DELHIVERY_API_KEY: ${DELHIVERY_API_KEY}
+  DELHIVERY_BASE_URL: ${DELHIVERY_BASE_URL}
+  DELHIVERY_RATE_LIMIT: ${DELHIVERY_RATE_LIMIT:-40}
+  BLUEDART_API_KEY: ${BLUEDART_API_KEY}
+  BLUEDART_BASE_URL: ${BLUEDART_BASE_URL}
+  BLUEDART_RATE_LIMIT: ${BLUEDART_RATE_LIMIT:-30}
+
+services:
+  shopify-db:
+    build:
+      context: .
+      dockerfile: ./shopify/db.dockerfile
+    environment:
+      POSTGRES_USER: shopify_user_dev
+      POSTGRES_PASSWORD: shopify_password_dev
+      POSTGRES_DB: shopify_db_dev
+    volumes:
+      - shopify_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    restart: always
+
+  shopify-service:
+    build:
+      context: .
+      dockerfile: ./shopify/app.dockerfile
+    depends_on:
+      - shopify-db
+    networks:
+      - logilo-network
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.development
+  shipment-db:
+    build:
+      context: .
+      dockerfile: ./shipment/db.dockerfile
+    environment:
+      POSTGRES_USER: shipment_user_dev
+      POSTGRES_PASSWORD: shipment_password_dev
+      POSTGRES_DB: shipment_db_dev
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - shipment_postgres_data:/var/lib/postgresql/data
+      - ./.env.development:/app/.env.development
+    networks:
+      - logilo-network
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipment_user_dev -d shipment_db_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  shipment-service:
+    build:
+      context: .
+      dockerfile: ./shipment/app.dockerfile
+    environment:
+      <<: *common-variables
+      DATABASE_SHIPMENT_URL: postgres://shipment_user_dev:shipment_password_dev@shipment-db:5432/shipment_db_dev?sslmode=disable
+      XPRESSBEES_EMAIL: shridhar2104@gmail.com
+      XPRESSBEES_PASSWORD: 483k5epan21
+    depends_on:
+      shipment-db:
+        condition: service_healthy
+    networks:
+      - logilo-network
+    ports:
+      - "50052:50052"
+    volumes:
+      - ./.env.development:/app/.env.development
+      - ./shipment/internal/database/migrations:/app/internal/database/migrations
+    env_file:
+      - .env.development
+    restart: on-failure
+
+  account-db:
+    build:
+      context: .
+      dockerfile: ./account/db.dockerfile
+    environment:
+      POSTGRES_USER: account_user_dev
+      POSTGRES_PASSWORD: account_password_dev
+      POSTGRES_DB: account_db_dev
+    volumes:
+      - account_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    ports:
+      - "5432:5432"  # Adding port mapping for debugging
+    healthcheck:     # Adding healthcheck
+      test: ["CMD-SHELL", "pg_isready -U account_user_dev -d account_db_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - .env.development 
+    restart: always
+    
+  account-service:
+    build:
+      context: .
+      dockerfile: ./account/app.dockerfile
+    depends_on:
+      - account-db
+    networks:
+      - logilo-network
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env.development
+
+  payment-db:
+    build:
+      context: .
+      dockerfile: ./payment/db.dockerfile
+    environment:
+      POSTGRES_USER: payment_service_user
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: payment_service_db
+    volumes:
+      - payment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - logilo-network
+    restart: always
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./payment/cmd/payment/Dockerfile
+    depends_on:
+      - payment-db
+    networks:
+      - logilo-network
+    ports:
+      - "8082:8082"
+      - "50051:50051"
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      DB_USER: payment_service_user
+      DB_PASSWORD: securepassword
+      DB_NAME: payment_service_db
+    restart: on-failure
+
+  graphql-service:
+    build:
+      context: .
+      dockerfile: ./graphql/app.dockerfile
+    environment:
+      - ACCOUNT_URL=account-service:8081
+      - SHOPIFY_URL=shopify-service:8080
+      - PAYMENT_URL=payment-service:50051
+      - SHIPMENT_URL=shipment-service:50052
+    networks:
+      - logilo-network
+    ports:
+      - "8084:8084"
+    env_file:
+      - .env.development
+    restart: on-failure
+    depends_on:
+      - shopify-service
+      - account-service
+      - payment-service
+      - shipment-service
+
+volumes:
+  shopify_postgres_data:
+  account_postgres_data:
+  payment_postgres_data:
+  shipment_postgres_data:
+
+networks:
+  logilo-network:
+    driver: bridge

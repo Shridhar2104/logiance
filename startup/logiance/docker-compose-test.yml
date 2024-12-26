@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  test-service:
+    image: alpine
+    environment:
+      - DELHIVERY_API_KEY=${DELHIVERY_API_KEY}
+    command: env

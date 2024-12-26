@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "/pb";
+
+// Existing Account messages
+message Account {
+    string id = 1;
+    string name = 2;
+    string password = 3;
+    string email = 4;
+}
+
+message CreateAccountRequest {
+    string name = 1;
+    string email = 3;
+    string password = 2;
+}
+
+message CreateAccountResponse {
+    Account account = 1;
+}   
+
+message GetAccountByEmailAndPasswordRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message GetAccountByEmailAndPasswordResponse {
+    Account account = 1;
+}
+
+message ListAccountsRequest {
+    uint64 skip = 1;
+    uint64 take = 2;
+}
+
+message ListAccountsResponse {
+    repeated Account accounts = 1;
+}
+
+// New Bank Account messages
+message BankAccount {
+    string user_id = 1;
+    string account_number = 2;
+    string beneficiary_name = 3;
+    string ifsc_code = 4;
+    string bank_name = 5;
+}
+
+message AddBankAccountRequest {
+    string user_id = 1;
+    string account_number = 2;
+    string beneficiary_name = 3;
+    string ifsc_code = 4;
+    string bank_name = 5;
+}
+
+message AddBankAccountResponse {
+    BankAccount bank_account = 1;
+}
+
+message GetBankAccountRequest {
+    string user_id = 1;
+}
+
+message GetBankAccountResponse {
+    BankAccount bank_account = 1;
+}
+
+message UpdateBankAccountRequest {
+    string user_id = 1;
+    string account_number = 2;
+    string beneficiary_name = 3;
+    string ifsc_code = 4;
+    string bank_name = 5;
+}
+
+message UpdateBankAccountResponse {
+    BankAccount bank_account = 1;
+}
+
+message DeleteBankAccountRequest {
+    string user_id = 1;
+}
+
+message DeleteBankAccountResponse {
+    bool success = 1;
+}
+
+service AccountService {
+    // Existing account methods
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {}
+    rpc GetAccountByEmailAndPassword(GetAccountByEmailAndPasswordRequest) returns (GetAccountByEmailAndPasswordResponse) {}
+    rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {}
+    
+    // New bank account methods
+    rpc AddBankAccount(AddBankAccountRequest) returns (AddBankAccountResponse) {}
+    rpc GetBankAccount(GetBankAccountRequest) returns (GetBankAccountResponse) {}
+    rpc UpdateBankAccount(UpdateBankAccountRequest) returns (UpdateBankAccountResponse) {}
+    rpc DeleteBankAccount(DeleteBankAccountRequest) returns (DeleteBankAccountResponse) {}
+}

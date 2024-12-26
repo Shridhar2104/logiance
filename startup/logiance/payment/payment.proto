@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+service PaymentService {
+  rpc RechargeWallet(RechargeWalletRequest) returns (RechargeWalletResponse);
+  rpc DeductBalance(DeductBalanceRequest) returns (DeductBalanceResponse);
+  rpc ProcessRemittance(ProcessRemittanceRequest) returns (ProcessRemittanceResponse);
+  rpc GetWalletDetails(GetWalletDetailsRequest) returns (WalletDetailsResponse);
+}
+
+message RechargeWalletRequest {
+  string account_id = 1;
+  double amount = 2;
+}
+
+message RechargeWalletResponse {
+  string account_id = 1;
+  double new_balance = 2;
+}
+
+message DeductBalanceRequest {
+  string account_id = 1;
+  double amount = 2;
+  string order_id = 3;
+}
+
+message DeductBalanceResponse {
+  string account_id = 1;
+  double new_balance = 2;
+}
+
+message ProcessRemittanceRequest {
+  string account_id = 1;
+  repeated string order_ids = 2;
+}
+
+message ProcessRemittanceResponse {
+  repeated RemittanceDetail remittance_details = 1;
+}
+
+message RemittanceDetail {
+  string order_id = 1;
+  double amount = 2;
+  bool processed = 3;
+}
+
+message GetWalletDetailsRequest {
+  string account_id = 1;
+}
+
+message WalletDetailsResponse {
+  string account_id = 1;
+  double balance = 2;
+  repeated Transaction transactions = 3;
+}
+
+message Transaction {
+  string transaction_id = 1;
+  string transaction_type = 2;
+  double amount = 3;
+  optional string order_id = 4;
+  string timestamp = 5;
+}

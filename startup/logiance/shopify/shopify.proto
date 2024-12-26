@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+service ShopifyService {
+    rpc GetAuthorizationURL(GetAuthorizationURLRequest) returns (GetAuthorizationURLResponse) {};
+    rpc ExchangeAccessToken(ExchangeAccessTokenRequest) returns (ExchangeAccessTokenResponse) {};
+    rpc GetOrdersForShopAndAccount(GetOrdersForShopAndAccountRequest) returns (GetOrdersForShopAndAccountResponse) {};
+    rpc SyncOrders(SyncOrderRequest) returns (SyncOrderResponse) {};
+    rpc GetOrdersForAccount(GetOrdersForAccountRequest) returns (GetOrdersForAccountResponse) {}; 
+    rpc GetOrder(GetOrderRequest) returns (Order) {};
+}
+
+// Updated Order message with more fields
+message Order {
+    string id = 1;                   
+    string order_name = 2;           // e.g., "#1234"
+    string account_id = 3;           
+    string shop_name = 4;            // Changed from shop_id to shop_name
+    float total_price = 5;
+    float subtotal_price = 6;
+    float total_tax = 7;
+    string financial_status = 8;     // paid, pending, refunded, etc.
+    string fulfillment_status = 9;   // fulfilled, partial, unfulfilled
+    string currency = 10;
+    string created_at = 11;          // Timestamp
+    string customer_email = 12;
+    string customer_name = 13;       // Combined first and last name
+}
+
+// New request message for getting orders
+message GetOrdersForAccountRequest {
+    string account_id = 1;
+    int32 page = 2;                  // For pagination
+    int32 page_size = 3;             // Items per page
+}
+
+// New response message for getting orders
+message GetOrdersForAccountResponse {
+    repeated Order orders = 1;
+    int32 total_count = 2;           // Total number of orders
+    int32 total_pages = 3;           // Total number of pages
+    int32 current_page = 4;          // Current page number
+}
+
+
+
+// Updated SyncOrder messages for multi-shop support
+message SyncOrderRequest {
+    string account_id = 1;           // Only need account_id as we'll fetch all shops for this account
+}
+
+message ShopSyncStatus {
+    bool success = 1;
+    string error_message = 2;        // Optional error message if sync failed
+    int32 orders_synced = 3;         // Number of orders synced
+}
+
+message SyncOrderResponse {
+    bool overall_success = 1;        // Overall sync operation success
+    map<string, ShopSyncStatus> shop_results = 2;  // Results per shop (shop_name -> status)
+    string message = 3;              // Optional message about the sync operation
+}
+
+
+
+
+message GetAuthorizationURLRequest {
+    string shop_name = 1;
+    string state = 2;
+}
+
+message GetAuthorizationURLResponse {
+    string auth_url = 1;
+}
+
+message ExchangeAccessTokenRequest {
+    string shop_name = 1;
+    string code = 2;
+    string account_id= 3;
+}
+
+message ExchangeAccessTokenResponse {
+    bool success = 1;
+}
+
+message GetOrdersForShopAndAccountRequest{
+    string shop_name = 1;
+    string account_id = 2;
+    string token =3;
+
+}
+
+message GetOrdersForShopAndAccountResponse{
+    repeated Order orders = 1;
+
+}
+// Request message for getting a single order
+message GetOrderRequest {
+    string order_id = 1;
+}
+
+// Response for a single order request - we'll reuse the Order message
+message GetOrderResponse {
+    Order order = 1;
+}

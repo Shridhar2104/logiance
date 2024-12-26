@@ -1,0 +1,36 @@
+# gqlgen.yml
+schema:
+  - schema.graphql
+
+models:
+  Account:
+    model: github.com/Shridhar2104/logilo/graphql/models.Account
+    fields:
+      orders:
+        resolver: true
+
+  SyncOrdersResult:
+    model: github.com/Shridhar2104/logilo/graphql/models.SyncOrdersResult
+  ShopSyncStatus:
+    model: github.com/Shridhar2104/logilo/graphql/models.ShopSyncStatus
+  ShopSyncDetails:
+    model: github.com/Shridhar2104/logilo/graphql/models.ShopSyncDetails
+  Order:
+    model: github.com/Shridhar2104/logilo/graphql/models.Order
+  OrderLineItem:
+    model: github.com/Shridhar2104/logilo/graphql/models.OrderLineItem
+  ShopName:
+    model: github.com/Shridhar2104/logilo/graphql/models.ShopName
+  
+
+  # Shipping related models
+  ShippingRateResponse:
+    model: github.com/Shridhar2104/logilo/graphql/models.ShippingRateResponse
+  CourierRate:
+    model: github.com/Shridhar2104/logilo/graphql/models.CourierRate
+  RateDetails:
+    model: github.com/Shridhar2104/logilo/graphql/models.RateDetails
+  CourierAvailabilityResponse:
+    model: github.com/Shridhar2104/logilo/graphql/models.CourierAvailabilityResponse
+  CourierInfo:
+    model: github.com/Shridhar2104/logilo/graphql/models.CourierInfo

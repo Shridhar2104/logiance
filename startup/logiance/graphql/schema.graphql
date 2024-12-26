@@ -1,0 +1,412 @@
+scalar DateTime
+
+type Account {
+   id: String!
+   name: String!
+   password: String!
+   email: String!
+   orders: [Order!]!
+   shopnames: [ShopName!]!
+   bankAccount: BankAccount
+}
+
+type BankAccount {
+   userId: String!
+   accountNumber: String!
+   beneficiaryName: String!
+   ifscCode: String!
+   bankName: String!
+   createdAt: DateTime!
+   updatedAt: DateTime!
+}
+
+type ShopName {
+   shopname: String!
+}
+
+type Order {
+   id: String!
+   name: String!
+   orderNumber: Int
+   amount: Float!
+   accountId: String!
+   createdAt: DateTime!
+   updatedAt: DateTime!
+   cancelledAt: DateTime
+   closedAt: DateTime
+   processedAt: DateTime
+   currency: String!
+   totalPrice: Float!
+   subtotalPrice: Float!
+   totalDiscounts: Float
+   totalTax: Float
+   taxesIncluded: Boolean
+   financialStatus: String
+   fulfillmentStatus: String
+   description: String
+   lineItems: [OrderLineItem!]!
+   customer: Customer
+   shopName: String!
+}
+
+type OrderLineItem {
+   id: String!
+   amount: Float!
+   description: String!
+}
+
+type Customer {
+   id: String
+   email: String
+   firstName: String
+   lastName: String
+   phone: String
+}
+
+type OrderConnection {
+   edges: [OrderEdge!]!
+   pageInfo: PageInfo!
+   totalCount: Int!
+}
+
+type OrderEdge {
+   node: Order!
+   cursor: String!
+}
+
+type PageInfo {
+   hasNextPage: Boolean!
+   hasPreviousPage: Boolean!
+   startCursor: String
+   endCursor: String
+   totalPages: Int!
+   currentPage: Int!
+}
+
+type ShopSyncStatus {
+   success: Boolean!
+   errorMessage: String
+   ordersCount: Int!
+}
+
+type ShopSyncDetails {
+   shopName: String!
+   status: ShopSyncStatus!
+}
+
+type SyncOrdersResult {
+   overallSuccess: Boolean!
+   message: String
+   shopResults: [ShopSyncDetails!]!
+}
+type WalletDetails {
+  # Add wallet detail fields here based on your pb.WalletDetailsResponse
+  accountId: ID!
+  balance: Float
+  currency: String
+  status: WalletStatus
+  lastUpdated: DateTime
+}
+
+type Error {
+  
+  code: String!
+ 
+  message: String!
+}
+
+enum WalletStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+type WalletOperationResponse {
+  
+  newBalance: Float!
+ 
+  errors: [Error!]
+}
+
+type WalletDetailsResponse {
+ 
+  walletDetails: WalletDetails
+  
+  errors: [Error!]
+}
+
+input RechargeWalletInput {
+  accountId: ID!
+  amount: Float!
+}
+
+input DeductBalanceInput {
+  accountId: ID!
+  amount: Float!
+  orderId: ID!
+}
+
+input OrderPaginationInput {
+   page: Int
+   pageSize: Int
+   filter: OrderFilter
+   sort: OrderSort
+}
+input GetWalletDetailsInput {
+  accountId: ID!
+}
+
+
+input OrderFilter {
+   createdAtStart: DateTime
+   createdAtEnd: DateTime
+   financialStatus: String
+   fulfillmentStatus: String
+   minTotalPrice: Float
+   maxTotalPrice: Float
+   searchTerm: String
+}
+
+input OrderSort {
+   field: OrderSortField!
+   direction: SortDirection!
+}
+
+enum OrderSortField {
+   CREATED_AT
+   UPDATED_AT
+   ORDER_NUMBER
+   TOTAL_PRICE
+}
+
+enum SortDirection {
+   ASC
+   DESC
+}
+
+input PaginationInput {
+   skip: Int!
+   take: Int!
+}
+
+input AccountInput {
+   name: String!
+   password: String!
+   email: String!
+}
+
+input BankAccountInput {
+   accountNumber: String!
+   beneficiaryName: String!
+   ifscCode: String!
+   bankName: String!
+}
+
+input OrderLineItemInput {
+   id: String!
+   amount: Float!
+   description: String!
+}
+
+input OrderInput {
+   accountId: String!
+   lineItems: [OrderLineItemInput!]!
+}
+
+#shipping 
+
+
+input ShippingRateInput {
+  origin_pincode: Int!
+  destination_pincode: Int!
+  weight: Float!
+  length: Float
+  width: Float
+  height: Float
+  payment_mode: PaymentMode!
+  collectable_amount: Float!
+  courier_codes: [String!]
+}
+
+input AvailabilityInput {
+  origin_pincode: Int!
+  destination_pincode: Int!
+  weight: Float!
+  payment_mode: PaymentMode
+}
+
+input CreateShipmentInput {
+  accountId: ID! 
+  courier_code: String!
+  order_number: String!
+  payment_type: PaymentType!
+  package_weight: Float!
+  package_length: Float!
+  package_breadth: Float!
+  package_height: Float!
+  order_amount: Float!
+  collectable_amount: Float!
+  consignee: AddressInput!
+  pickup: AddressInput!
+  items: [OrderItemInput!]!
+  auto_pickup: Boolean
+  return_info: ReturnInfoInput
+}
+
+input AddressInput {
+  name: String!
+  company_name: String
+  phone: String!
+  email: String
+  address_line1: String!
+  address_line2: String
+  landmark: String
+  city: String!
+  state: String!
+  country: String
+  pincode: String!
+  gstin: String
+}
+
+input OrderItemInput {
+  sku: String!
+  name: String!
+  quantity: Int!
+  price: Float!
+  hsn_code: String
+  category: String
+  actual_weight: Float
+}
+
+input ReturnInfoInput {
+  address: AddressInput!
+  awb_number: String
+  return_reason: String
+  return_comment: String
+}
+
+input TrackingInput {
+  courier_code: String!
+  tracking_id: String!
+}
+
+enum PaymentMode {
+  COD
+  PREPAID
+}
+
+enum PaymentType {
+  COD
+  PREPAID
+}
+
+type ShippingRateResponse {
+  success: Boolean!
+  rates: [CourierRate!]
+  error: String
+}
+
+type CourierRate {
+  courier_code: String!
+  courier_name: String!
+  base_charge: Float!
+  fuel_surcharge: Float!
+  cod_charge: Float!
+  handling_charge: Float!
+  total_charge: Float!
+  expected_days: Int!
+}
+
+type CourierAvailabilityResponse {
+  success: Boolean!
+  available_couriers: [CourierInfo!]
+  error: String
+}
+
+type CourierInfo {
+  code: String!
+  name: String!
+  description: String
+}
+
+type ShipmentResponse {
+  success: Boolean!
+  tracking_id: String
+  courier_awb: String
+  label: String
+  error: String
+}
+
+type TrackingResponse {
+  success: Boolean!
+  events: [TrackingEvent!]
+  error: String
+}
+
+type TrackingEvent {
+  status: String!
+  location: String!
+  timestamp: String!
+  description: String!
+}
+
+input AccountShipmentsInput {
+    accountId: ID!
+    page: Int!
+    pageSize: Int!
+}
+
+type AccountShipmentsResponse {
+    success: Boolean!
+    shipments: [ShipmentInfo!]
+    error: String
+}
+
+type ShipmentInfo {
+    orderNumber: String!
+    trackingId: String!
+    courierAwb: String!
+    status: String!
+    label: String
+    createdAt: String!
+}
+
+
+
+type Mutation {
+   createAccount(Account: AccountInput!): Account!
+   integrateShop(shopName: String!): String!
+   exchangeAccessToken(shopName: String!, code: String!, accountId: String!): Boolean!
+   syncOrders(accountId: String!): SyncOrdersResult!
+    rechargeWallet(input: RechargeWalletInput!): WalletOperationResponse!
+    deductBalance(input: DeductBalanceInput!): WalletOperationResponse!
+    
+
+    #shipping part starts here
+      calculateShippingRates(input: ShippingRateInput!): ShippingRateResponse!
+  getAvailableCouriers(input: AvailabilityInput!): CourierAvailabilityResponse!
+  createShipment(input: CreateShipmentInput!): ShipmentResponse!
+  trackShipment(input: TrackingInput!): TrackingResponse!
+   addBankAccount(userId: String!, bankAccount: BankAccountInput!): BankAccount!
+   updateBankAccount(userId: String!, bankAccount: BankAccountInput!): BankAccount!
+   deleteBankAccount(userId: String!): Boolean!
+}
+
+type Query {
+   getAccountByID(email: String!, password: String!): Account!
+   accounts(pagination: PaginationInput!): [Account!]!
+   getOrdersForAccount(accountId: String!, pagination: OrderPaginationInput): OrderConnection!
+   getOrder(id: String!): Order
+   getBankAccount(userId: String!): BankAccount
+    getWalletDetails(input: GetWalletDetailsInput!): WalletDetailsResponse!
+        # New tracking queries
+    getShipmentByOrder(orderId: ID!): ShipmentResponse!
+    getAccountShipments(input: AccountShipmentsInput!): AccountShipmentsResponse!
+
+    ping: String!
+}
+
+type Accounts {
+   orders(pagination: PaginationInput!): [Order!]!
+}
