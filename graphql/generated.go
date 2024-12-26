@@ -186,8 +186,8 @@ type ComplexityRoot struct {
 	Query struct {
 		Accounts            func(childComplexity int, pagination PaginationInput) int
 		GetAccountByID      func(childComplexity int, email string, password string) int
-		GetBankAccount      func(childComplexity int, userID string) int
 		GetAccountShipments func(childComplexity int, input AccountShipmentsInput) int
+		GetBankAccount      func(childComplexity int, userID string) int
 		GetOrder            func(childComplexity int, id string) int
 		GetOrdersForAccount func(childComplexity int, accountID string, pagination *OrderPaginationInput) int
 		GetShipmentByOrder  func(childComplexity int, orderID string) int
@@ -1045,18 +1045,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetAccountByID(childComplexity, args["email"].(string), args["password"].(string)), true
 
-	case "Query.getBankAccount":
-		if e.complexity.Query.GetBankAccount == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getBankAccount_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetBankAccount(childComplexity, args["userId"].(string)), true
-
 	case "Query.getAccountShipments":
 		if e.complexity.Query.GetAccountShipments == nil {
 			break
@@ -1068,6 +1056,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetAccountShipments(childComplexity, args["input"].(AccountShipmentsInput)), true
+
+	case "Query.getBankAccount":
+		if e.complexity.Query.GetBankAccount == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getBankAccount_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetBankAccount(childComplexity, args["userId"].(string)), true
 
 	case "Query.getOrder":
 		if e.complexity.Query.GetOrder == nil {
@@ -2219,9 +2219,9 @@ func (ec *executionContext) field_Query_getAccountByID_argsPassword(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Query_getAccountShipments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_getAccountShipments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
+	args := map[string]any{}
 	arg0, err := ec.field_Query_getAccountShipments_argsInput(ctx, rawArgs)
 	if err != nil {
 		return nil, err
@@ -2231,7 +2231,7 @@ func (ec *executionContext) field_Query_getAccountShipments_args(ctx context.Con
 }
 func (ec *executionContext) field_Query_getAccountShipments_argsInput(
 	ctx context.Context,
-	rawArgs map[string]interface{},
+	rawArgs map[string]any,
 ) (AccountShipmentsInput, error) {
 	// We won't call the directive if the argument is null.
 	// Set call_argument_directives_with_null to true to call directives
@@ -2374,9 +2374,9 @@ func (ec *executionContext) field_Query_getOrdersForAccount_argsPagination(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Query_getShipmentByOrder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_getShipmentByOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
+	args := map[string]any{}
 	arg0, err := ec.field_Query_getShipmentByOrder_argsOrderID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
@@ -2386,7 +2386,7 @@ func (ec *executionContext) field_Query_getShipmentByOrder_args(ctx context.Cont
 }
 func (ec *executionContext) field_Query_getShipmentByOrder_argsOrderID(
 	ctx context.Context,
-	rawArgs map[string]interface{},
+	rawArgs map[string]any,
 ) (string, error) {
 	// We won't call the directive if the argument is null.
 	// Set call_argument_directives_with_null to true to call directives
@@ -2824,6 +2824,63 @@ func (ec *executionContext) fieldContext_Account_shopnames(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Account_bankAccount(ctx context.Context, field graphql.CollectedField, obj *models.Account) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Account_bankAccount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Account().BankAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*BankAccount)
+	fc.Result = res
+	return ec.marshalOBankAccount2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐBankAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Account_bankAccount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Account",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_BankAccount_userId(ctx, field)
+			case "accountNumber":
+				return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+			case "beneficiaryName":
+				return ec.fieldContext_BankAccount_beneficiaryName(ctx, field)
+			case "ifscCode":
+				return ec.fieldContext_BankAccount_ifscCode(ctx, field)
+			case "bankName":
+				return ec.fieldContext_BankAccount_bankName(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BankAccount_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BankAccount_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BankAccount", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AccountShipmentsResponse_success(ctx context.Context, field graphql.CollectedField, obj *AccountShipmentsResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AccountShipmentsResponse_success(ctx, field)
 	if err != nil {
@@ -2836,7 +2893,7 @@ func (ec *executionContext) _AccountShipmentsResponse_success(ctx context.Contex
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Success, nil
 	})
@@ -2880,7 +2937,7 @@ func (ec *executionContext) _AccountShipmentsResponse_shipments(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Shipments, nil
 	})
@@ -2935,7 +2992,7 @@ func (ec *executionContext) _AccountShipmentsResponse_error(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Error, nil
 	})
@@ -2959,63 +3016,6 @@ func (ec *executionContext) fieldContext_AccountShipmentsResponse_error(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Account_bankAccount(ctx context.Context, field graphql.CollectedField, obj *models.Account) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Account_bankAccount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Account().BankAccount(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*BankAccount)
-	fc.Result = res
-	return ec.marshalOBankAccount2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐBankAccount(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Account_bankAccount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Account",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "userId":
-				return ec.fieldContext_BankAccount_userId(ctx, field)
-			case "accountNumber":
-				return ec.fieldContext_BankAccount_accountNumber(ctx, field)
-			case "beneficiaryName":
-				return ec.fieldContext_BankAccount_beneficiaryName(ctx, field)
-			case "ifscCode":
-				return ec.fieldContext_BankAccount_ifscCode(ctx, field)
-			case "bankName":
-				return ec.fieldContext_BankAccount_bankName(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_BankAccount_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_BankAccount_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type BankAccount", field.Name)
 		},
 	}
 	return fc, nil
@@ -3796,7 +3796,6 @@ func (ec *executionContext) _CourierRate_base_charge(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.BaseCharge, nil
-		return obj.BaseCharge, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3817,8 +3816,6 @@ func (ec *executionContext) fieldContext_CourierRate_base_charge(_ context.Conte
 	fc = &graphql.FieldContext{
 		Object:     "CourierRate",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3843,7 +3840,6 @@ func (ec *executionContext) _CourierRate_fuel_surcharge(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.FuelSurcharge, nil
-		return obj.FuelSurcharge, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3864,8 +3860,6 @@ func (ec *executionContext) fieldContext_CourierRate_fuel_surcharge(_ context.Co
 	fc = &graphql.FieldContext{
 		Object:     "CourierRate",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3890,7 +3884,6 @@ func (ec *executionContext) _CourierRate_cod_charge(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CodCharge, nil
-		return obj.CodCharge, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3911,8 +3904,6 @@ func (ec *executionContext) fieldContext_CourierRate_cod_charge(_ context.Contex
 	fc = &graphql.FieldContext{
 		Object:     "CourierRate",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3937,7 +3928,6 @@ func (ec *executionContext) _CourierRate_handling_charge(ctx context.Context, fi
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.HandlingCharge, nil
-		return obj.HandlingCharge, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3958,8 +3948,6 @@ func (ec *executionContext) fieldContext_CourierRate_handling_charge(_ context.C
 	fc = &graphql.FieldContext{
 		Object:     "CourierRate",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3984,7 +3972,6 @@ func (ec *executionContext) _CourierRate_total_charge(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalCharge, nil
-		return obj.TotalCharge, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4005,8 +3992,6 @@ func (ec *executionContext) fieldContext_CourierRate_total_charge(_ context.Cont
 	fc = &graphql.FieldContext{
 		Object:     "CourierRate",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -4031,7 +4016,6 @@ func (ec *executionContext) _CourierRate_expected_days(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ExpectedDays, nil
-		return obj.ExpectedDays, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4052,8 +4036,6 @@ func (ec *executionContext) fieldContext_CourierRate_expected_days(_ context.Con
 	fc = &graphql.FieldContext{
 		Object:     "CourierRate",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -7250,7 +7232,7 @@ func (ec *executionContext) _Query_getShipmentByOrder(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().GetShipmentByOrder(rctx, fc.Args["orderId"].(string))
 	})
@@ -7317,7 +7299,7 @@ func (ec *executionContext) _Query_getAccountShipments(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().GetAccountShipments(rctx, fc.Args["input"].(AccountShipmentsInput))
 	})
@@ -7553,7 +7535,7 @@ func (ec *executionContext) _ShipmentInfo_orderNumber(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.OrderNumber, nil
 	})
@@ -7597,7 +7579,7 @@ func (ec *executionContext) _ShipmentInfo_trackingId(ctx context.Context, field 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TrackingID, nil
 	})
@@ -7641,7 +7623,7 @@ func (ec *executionContext) _ShipmentInfo_courierAwb(ctx context.Context, field 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CourierAwb, nil
 	})
@@ -7685,7 +7667,7 @@ func (ec *executionContext) _ShipmentInfo_status(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Status, nil
 	})
@@ -7729,7 +7711,7 @@ func (ec *executionContext) _ShipmentInfo_label(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Label, nil
 	})
@@ -7770,7 +7752,7 @@ func (ec *executionContext) _ShipmentInfo_createdAt(ctx context.Context, field g
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CreatedAt, nil
 	})
@@ -11083,10 +11065,10 @@ func (ec *executionContext) unmarshalInputAccountInput(ctx context.Context, obj 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAccountShipmentsInput(ctx context.Context, obj interface{}) (AccountShipmentsInput, error) {
+func (ec *executionContext) unmarshalInputAccountShipmentsInput(ctx context.Context, obj any) (AccountShipmentsInput, error) {
 	var it AccountShipmentsInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12498,19 +12480,13 @@ func (ec *executionContext) _CourierRate(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._CourierRate_courier_code(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
-				out.Invalids++
 			}
 		case "courier_name":
 			out.Values[i] = ec._CourierRate_courier_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
-				out.Invalids++
 			}
 		case "base_charge":
-			out.Values[i] = ec._CourierRate_base_charge(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 			out.Values[i] = ec._CourierRate_base_charge(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -12530,24 +12506,12 @@ func (ec *executionContext) _CourierRate(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-			out.Values[i] = ec._CourierRate_handling_charge(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "total_charge":
 			out.Values[i] = ec._CourierRate_total_charge(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-			out.Values[i] = ec._CourierRate_total_charge(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "expected_days":
-			out.Values[i] = ec._CourierRate_expected_days(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 			out.Values[i] = ec._CourierRate_expected_days(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -14473,7 +14437,7 @@ func (ec *executionContext) unmarshalNAccountInput2githubᚗcomᚋShridhar2104�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNAccountShipmentsInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐAccountShipmentsInput(ctx context.Context, v interface{}) (AccountShipmentsInput, error) {
+func (ec *executionContext) unmarshalNAccountShipmentsInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐAccountShipmentsInput(ctx context.Context, v any) (AccountShipmentsInput, error) {
 	res, err := ec.unmarshalInputAccountShipmentsInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }

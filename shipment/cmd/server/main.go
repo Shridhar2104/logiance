@@ -36,7 +36,7 @@ func main() {
     log.Printf("Current working directory: %s", pwd)
 
     // Load environment variables
-    envPath := "../.env.development"
+    envPath := "/app/.env.development"
     log.Printf("Loading environment from: %s", envPath)
     if err := godotenv.Load(envPath); err != nil {
         log.Fatalf("Error loading .env file: %v", err)
