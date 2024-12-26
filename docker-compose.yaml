@@ -48,6 +48,8 @@ services:
       - shipment_postgres_data:/var/lib/postgresql/data
     networks:
       - logilo-network
+    ports:
+      - "5434:5432"
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U shipment_user_dev -d shipment_db_dev"]
