@@ -86,3 +86,23 @@ jobs:
           file: ./shipment/app.dockerfile
           push: true
           tags: logilog/shipment-service:latest
+          
+      - name: build and push payment-db
+        id: build-push-payment-db
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./payment/db.dockerfile
+          push: true
+          tags: logilog/payment-db:latest
+          
+      - name: build and push payment-service
+        id: build-push-payment-service
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./payment/cmd/payment/Dockerfile
+          push: true
+          tags: logilog/payment-service:latest
+
+      
