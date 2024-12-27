@@ -85,4 +85,4 @@ jobs:
           context: .
           file: ./shipment/app.dockerfile
           push: true
-          tags: logilog/shopify-service:latest
+          tags: logilog/shipment-service:latest
