@@ -68,3 +68,21 @@ jobs:
           file: ./shopify/app.dockerfile
           push: true
           tags: logilog/shopify-service:latest
+          
+      - name: build and push shipment-db
+        id: build-push-shipment-db
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./shipment/db.dockerfile
+          push: true
+          tags: logilog/shipment-db:latest
+
+      - name: build and push shipment-service
+        id: build-push-shipment-service
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./shipment/app.dockerfile
+          push: true
+          tags: logilog/shopify-service:latest
