@@ -127,20 +127,24 @@ jobs:
               --task-definition logilo-${service_mappings[$service]}-dev \
               --query 'taskDefinition' \
               --output json)
-            
-            # Update the image in container definitions
-            NEW_TASK_DEF=$(echo $TASK_DEF | jq \
-              --arg IMAGE "$ECR_REGISTRY/$service:latest" \
-              '.containerDefinitions[0].image = $IMAGE | {
-                family: .family,
-                taskRoleArn: .taskRoleArn,
-                executionRoleArn: .executionRoleArn,
-                networkMode: .networkMode,
-                containerDefinitions: .containerDefinitions,
-                requiresCompatibilities: .requiresCompatibilities,
-                cpu: .cpu,
-                memory: .memory
-              }')
+          DEFAULT_TASK_ROLE="arn:aws:iam::aws_account_id:role/ecsTaskExecutionRole"
+          DEFAULT_EXEC_ROLE="arn:aws:iam::aws_account_id:role/ecsExecutionRole"
+
+           NEW_TASK_DEF=$(echo $TASK_DEF | jq \
+            --arg IMAGE "$ECR_REGISTRY/$service:latest" \
+            --arg TASK_ROLE_ARN "${TASK_DEF.taskRoleArn}" \
+            --arg EXECUTION_ROLE_ARN "${TASK_DEF.executionRoleArn}" \
+            '.containerDefinitions[0].image = $IMAGE | {
+              family: .family,
+              taskRoleArn: $TASK_ROLE_ARN,
+              executionRoleArn: $EXECUTION_ROLE_ARN,
+              networkMode: .networkMode,
+              containerDefinitions: .containerDefinitions,
+              requiresCompatibilities: .requiresCompatibilities,
+              cpu: .cpu,
+              memory: .memory
+            }')
+
 
             # Register new task definition
             NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
