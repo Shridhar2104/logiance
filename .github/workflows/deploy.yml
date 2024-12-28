@@ -32,14 +32,15 @@ jobs:
 
       - name: Create ECR repositories
         run: |
-          for repo in graphql account-service shopify-service payment-service shipment-service; do
-            echo "Checking or creating repository: $repo"
-            if aws ecr describe-repositories --repository-names $repo >/dev/null 2>&1; then
-              echo "Repository $repo already exists."
+          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
+          for service in "${services[@]}"; do
+            echo "Checking or creating repository: $service"
+            if aws ecr describe-repositories --repository-names $service >/dev/null 2>&1; then
+              echo "Repository $service already exists."
             else
-              echo "Creating repository $repo."
+              echo "Creating repository $service."
               aws ecr create-repository \
-                --repository-name $repo \
+                --repository-name $service \
                 --image-scanning-configuration scanOnPush=true
             fi
           done
@@ -48,30 +49,44 @@ jobs:
         run: |
           services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
-            docker pull logilog/$service:latest
+            echo "Pulling and pushing Docker image for $service..."
+            docker pull logilog/$service:latest || {
+              echo "Error: Failed to pull image logilog/$service:latest"
+              exit 1
+            }
             docker tag logilog/$service:latest $ECR_REGISTRY/$service:latest
-            docker push $ECR_REGISTRY/$service:latest
+            docker push $ECR_REGISTRY/$service:latest || {
+              echo "Error: Failed to push image for $service"
+              exit 1
+            }
           done
 
       - name: Deploy Services
         run: |
           services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
-            echo "Deploying $service service..."
-            task_definition=$(aws ecs describe-task-definition \
-              --task-definition logilo-${service}-dev \
+            echo "Updating task definition for $service service..."
+            new_task_def=$(aws ecs describe-task-definition \
+              --task-definition logilo-${service}-dev)
+
+            new_task_def=$(echo $new_task_def | jq 'del(.taskDefinition.taskDefinitionArn, .taskDefinition.revision, .taskDefinition.status, .taskDefinition.requiresAttributes, .taskDefinition.compatibilities)')
+            new_task_def=$(echo $new_task_def | jq '.taskDefinition.containerDefinitions[0].image = "'$ECR_REGISTRY/$service:latest'"')
+
+            new_task_def_arn=$(aws ecs register-task-definition \
+              --cli-input-json "$new_task_def" \
               --query 'taskDefinition.taskDefinitionArn' \
-              --output text 2>/dev/null)
-            if [ -z "$task_definition" ]; then
-              echo "Error: Task definition for $service not found. Skipping deployment."
-              continue
-            fi
+              --output text)
+
+            echo "Deploying $service service with new task definition: $new_task_def_arn"
 
             aws ecs update-service \
               --cluster ${{ env.ECS_CLUSTER }} \
               --service ${service}-service \
               --force-new-deployment \
-              --task-definition "$task_definition"
+              --task-definition "$new_task_def_arn" || {
+                echo "Error: Failed to update service $service"
+                exit 1
+              }
           done
 
       - name: Wait for services to stabilize
@@ -81,7 +96,10 @@ jobs:
             echo "Waiting for $service service to stabilize..."
             aws ecs wait services-stable \
               --cluster ${{ env.ECS_CLUSTER }} \
-              --services ${service}-service
+              --services ${service}-service || {
+                echo "Error: $service service failed to stabilize."
+                exit 1
+              }
             echo "$service service is stable."
           done
 
@@ -89,10 +107,13 @@ jobs:
         run: |
           services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
-            echo "Verifying ${service}-service deployment..."
+            echo "Verifying deployment for ${service}-service..."
             aws ecs describe-services \
               --cluster ${{ env.ECS_CLUSTER }} \
               --services ${service}-service \
               --query 'services[0].{Status:status,DesiredCount:desiredCount,RunningCount:runningCount}' \
-              --output table
+              --output table || {
+                echo "Error: Failed to verify deployment for $service"
+                exit 1
+              }
           done
