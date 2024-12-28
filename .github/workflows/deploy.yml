@@ -66,25 +66,44 @@ jobs:
 
       - name: Push images to ECR
         run: |
+          # Set ECR registry URL
+          ECR_REGISTRY="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+          
           declare -A service_mappings=(
             ["graphql"]="graphql"
-            ["account-service"]="account-service"
-            ["shopify-service"]="shopify-service"
-            ["payment-service"]="payment-service"
-            ["shipment-service"]="shipment-service"
+            ["account"]="account-service"
+            ["shopify"]="shopify-service"
+            ["payment"]="payment-service"
+            ["shipment"]="shipment-service"
           )
 
-          for service in "${!service_mappings[@]}"; do
-            echo "Pulling and pushing Docker image for $service..."
-            docker pull logilog/${service_mappings[$service]}:latest || {
-              echo "Error: Failed to pull image logilog/${service_mappings[$service]}:latest"
+          for repo_name in "${!service_mappings[@]}"; do
+            docker_image="logilog/${service_mappings[$repo_name]}"
+            ecr_repo="$ECR_REGISTRY/$repo_name"
+            
+            echo "Processing $repo_name service"
+            echo "Docker Hub image: $docker_image"
+            echo "ECR repository: $ecr_repo"
+            
+            # Pull from Docker Hub
+            docker pull "$docker_image:latest" || {
+              echo "Error: Failed to pull image $docker_image:latest"
               exit 1
             }
-            docker tag logilog/${service_mappings[$service]}:latest $ECR_REGISTRY/$service:latest
-            docker push $ECR_REGISTRY/$service:latest || {
-              echo "Error: Failed to push image for $service"
+            
+            # Tag for ECR
+            docker tag "$docker_image:latest" "$ecr_repo:latest" || {
+              echo "Error: Failed to tag image for ECR"
               exit 1
             }
+            
+            # Push to ECR
+            docker push "$ecr_repo:latest" || {
+              echo "Error: Failed to push image to ECR"
+              exit 1
+            }
+            
+            echo "Successfully processed $repo_name service"
           done
 
       - name: Deploy Services
