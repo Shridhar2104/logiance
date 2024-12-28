@@ -47,7 +47,7 @@ jobs:
 
       - name: Push images to ECR
         run: |
-          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
+          services=("graphql" "account" "shopify" "payment" "shipment")  
           for service in "${services[@]}"; do
             echo "Pulling and pushing Docker image for $service..."
             docker pull logilog/$service:latest || {
@@ -66,24 +66,41 @@ jobs:
           services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
             echo "Updating task definition for $service service..."
-            new_task_def=$(aws ecs describe-task-definition \
-              --task-definition logilo-${service}-dev)
+            
+            # Get current task definition
+            TASK_DEF=$(aws ecs describe-task-definition \
+              --task-definition logilo-${service}-dev \
+              --query 'taskDefinition' \
+              --output json)
+            
+            # Update the image in container definitions while preserving other settings
+            NEW_TASK_DEF=$(echo $TASK_DEF | jq \
+              --arg IMAGE "$ECR_REGISTRY/$service:latest" \
+              '.containerDefinitions[0].image = $IMAGE | {
+                family: .family,
+                taskRoleArn: .taskRoleArn,
+                executionRoleArn: .executionRoleArn,
+                networkMode: .networkMode,
+                containerDefinitions: .containerDefinitions,
+                requiresCompatibilities: .requiresCompatibilities,
+                cpu: .cpu,
+                memory: .memory
+              }')
 
-            new_task_def=$(echo $new_task_def | jq 'del(.taskDefinition.taskDefinitionArn, .taskDefinition.revision, .taskDefinition.status, .taskDefinition.requiresAttributes, .taskDefinition.compatibilities)')
-            new_task_def=$(echo $new_task_def | jq '.taskDefinition.containerDefinitions[0].image = "'$ECR_REGISTRY/$service:latest'"')
-
-            new_task_def_arn=$(aws ecs register-task-definition \
-              --cli-input-json "$new_task_def" \
+            # Register new task definition
+            NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+              --cli-input-json "$NEW_TASK_DEF" \
               --query 'taskDefinition.taskDefinitionArn' \
               --output text)
 
-            echo "Deploying $service service with new task definition: $new_task_def_arn"
+            echo "Deploying $service service with new task definition: $NEW_TASK_DEF_ARN"
 
+            # Update the service
             aws ecs update-service \
               --cluster ${{ env.ECS_CLUSTER }} \
-              --service ${service}-service \
+              --service ${service} \
               --force-new-deployment \
-              --task-definition "$new_task_def_arn" || {
+              --task-definition "$NEW_TASK_DEF_ARN" || {
                 echo "Error: Failed to update service $service"
                 exit 1
               }
