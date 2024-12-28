@@ -16,6 +16,7 @@ type CourierConfig struct {
     RateLimit  int
     ApiKey     string
     ApiSecret  string
+    
 }
 
 // internal/config/config.go
