@@ -1,84 +1,107 @@
-# .github/workflows/deploy.yml
-
-name: Deploy to AWS ECS
-
+# .github/workflows/cd.yml
+name: CD Pipeline
 on:
-  push:
-    branches: [ main ]  # Triggers on push to main branch
-  pull_request:
-    branches: [ main ]  # Also run on PRs to main
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY_PREFIX: logilo  # Your ECR repository prefix
+  ECS_CLUSTER: logilo-cluster-dev
 
 jobs:
-  build-and-deploy:
+  deploy:
+    name: Deploy to ECS
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [graphql, account, payment, shipment, shopify]  # List of your services
-        include:
-          - service: graphql
-            port: 8084
-          - service: account
-            port: 8081
-          - service: payment
-            port: 50051
-          - service: shipment
-            port: 50052
-          - service: shopify
-            port: 8080
-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      # Deploy GraphQL Service
+      - name: Deploy GraphQL Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service graphql-service \
+            --force-new-deployment \
+            --task-definition $(aws ecs describe-task-definition \
+              --task-definition logilo-graphql-dev \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      # Deploy Account Service
+      - name: Deploy Account Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service account-service \
+            --force-new-deployment \
+            --task-definition $(aws ecs describe-task-definition \
+              --task-definition logilo-account-dev \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
 
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-        SERVICE_NAME: ${{ matrix.service }}
-      run: |
-        # Build Docker image
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$SERVICE_NAME:$IMAGE_TAG \
-          -f ./$SERVICE_NAME/app.dockerfile .
-        
-        # Push image to ECR
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$SERVICE_NAME:$IMAGE_TAG
-        
-        # Store image URI for later use
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$SERVICE_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      # Deploy Shopify Service
+      - name: Deploy Shopify Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service shopify-service \
+            --force-new-deployment \
+            --task-definition $(aws ecs describe-task-definition \
+              --task-definition logilo-shopify-dev \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
 
-    - name: Update ECS service
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-        SERVICE_NAME: ${{ matrix.service }}
-      run: |
-        aws ecs update-service \
-          --cluster logilo-cluster-dev \
-          --service $SERVICE_NAME-service \
-          --force-new-deployment \
-          --task-definition $(aws ecs describe-task-definition \
-            --task-definition logilo-$SERVICE_NAME-dev \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
+      # Deploy Payment Service
+      - name: Deploy Payment Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service payment-service \
+            --force-new-deployment \
+            --task-definition $(aws ecs describe-task-definition \
+              --task-definition logilo-payment-dev \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
 
-    - name: Wait for service stability
-      run: |
-        aws ecs wait services-stable \
-          --cluster logilo-cluster-dev \
-          --services ${{ matrix.service }}-service
+      # Deploy Shipment Service
+      - name: Deploy Shipment Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service shipment-service \
+            --force-new-deployment \
+            --task-definition $(aws ecs describe-task-definition \
+              --task-definition logilo-shipment-dev \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
+
+      # Wait for services to stabilize
+      - name: Wait for services to stabilize
+        run: |
+          for service in graphql-service account-service shopify-service payment-service shipment-service; do
+            aws ecs wait services-stable \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services $service
+          done
+
+      # Verify deployment
+      - name: Verify deployment
+        run: |
+          for service in graphql-service account-service shopify-service payment-service shipment-service; do
+            echo "Checking $service status..."
+            aws ecs describe-services \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services $service \
+              --query 'services[0].{Status:status,DesiredCount:desiredCount,RunningCount:runningCount}'
+          done
