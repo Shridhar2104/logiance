@@ -18,7 +18,7 @@ jobs:
     name: Deploy to ECS
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
+
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -28,40 +28,30 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Create ECR repositories if they don't exist
       - name: Create ECR repositories
         run: |
           for repo in graphql account-service shopify-service payment-service shipment-service; do
-            aws ecr describe-repositories --repository-names $repo || \
+            echo "Checking or creating repository: $repo"
+            aws ecr describe-repositories --repository-names $repo >/dev/null 2>&1 || \
             aws ecr create-repository \
               --repository-name $repo \
               --image-scanning-configuration scanOnPush=true
           done
 
-      # Pull images from Docker Hub and push to ECR
       - name: Push images to ECR
         run: |
           services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
-          
           for service in "${services[@]}"; do
-            # Pull from Docker Hub
             docker pull logilog/$service:latest
-            
-            # Tag for ECR
             docker tag logilog/$service:latest $ECR_REGISTRY/$service:latest
-            
-            # Push to ECR
             docker push $ECR_REGISTRY/$service:latest
           done
 
-      # Deploy services
       - name: Deploy Services
         run: |
-          services=("graphql" "account" "shopify" "payment" "shipment")
-          
+          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
             echo "Deploying $service service..."
             aws ecs update-service \
@@ -74,22 +64,18 @@ jobs:
                 --output text)
           done
 
-      # Wait for services to stabilize
       - name: Wait for services to stabilize
         run: |
-          services=("graphql" "account" "shopify" "payment" "shipment")
-          
+          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
             aws ecs wait services-stable \
               --cluster ${{ env.ECS_CLUSTER }} \
               --services ${service}-service
           done
 
-      # Verify deployment
       - name: Verify deployment
         run: |
-          services=("graphql" "account" "shopify" "payment" "shipment")
-          
+          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
           for service in "${services[@]}"; do
             echo "Checking ${service}-service status..."
             aws ecs describe-services \
