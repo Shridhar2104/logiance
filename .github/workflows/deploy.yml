@@ -125,9 +125,9 @@ jobs:
               --query 'taskDefinition' \
               --output json)
 
-            # Extract taskRoleArn and executionRoleArn using jq
-            TASK_ROLE_ARN=$(echo "$TASK_DEF" | jq -r '.taskRoleArn')
-            EXEC_ROLE_ARN=$(echo "$TASK_DEF" | jq -r '.executionRoleArn')
+            TASK_ROLE_ARN=${TASK_ROLE_ARN:-"arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"}
+            EXEC_ROLE_ARN=${EXEC_ROLE_ARN:-"arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsExecutionRole"}
+
 
             # Use default if either value is null
             DEFAULT_TASK_ROLE="arn:aws:iam::aws_account_id:role/ecsTaskExecutionRole"
