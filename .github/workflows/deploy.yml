@@ -46,6 +46,9 @@ jobs:
           aws sts get-caller-identity
           echo "AWS credentials verified"
 
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
       # Rest of your pipeline remains the same...
       # AWS credentials and ECR login steps remain the same...
 
