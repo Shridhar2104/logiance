@@ -49,9 +49,6 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Rest of your pipeline remains the same...
-      # AWS credentials and ECR login steps remain the same...
-
       - name: Create ECR repositories
         run: |
           services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
@@ -127,24 +124,33 @@ jobs:
               --task-definition logilo-${service_mappings[$service]}-dev \
               --query 'taskDefinition' \
               --output json)
-          DEFAULT_TASK_ROLE="arn:aws:iam::aws_account_id:role/ecsTaskExecutionRole"
-          DEFAULT_EXEC_ROLE="arn:aws:iam::aws_account_id:role/ecsExecutionRole"
 
-           NEW_TASK_DEF=$(echo $TASK_DEF | jq \
-            --arg IMAGE "$ECR_REGISTRY/$service:latest" \
-            --arg TASK_ROLE_ARN "${TASK_DEF.taskRoleArn}" \
-            --arg EXECUTION_ROLE_ARN "${TASK_DEF.executionRoleArn}" \
-            '.containerDefinitions[0].image = $IMAGE | {
-              family: .family,
-              taskRoleArn: $TASK_ROLE_ARN,
-              executionRoleArn: $EXECUTION_ROLE_ARN,
-              networkMode: .networkMode,
-              containerDefinitions: .containerDefinitions,
-              requiresCompatibilities: .requiresCompatibilities,
-              cpu: .cpu,
-              memory: .memory
-            }')
+            # Extract taskRoleArn and executionRoleArn using jq
+            TASK_ROLE_ARN=$(echo "$TASK_DEF" | jq -r '.taskRoleArn')
+            EXEC_ROLE_ARN=$(echo "$TASK_DEF" | jq -r '.executionRoleArn')
 
+            # Use default if either value is null
+            DEFAULT_TASK_ROLE="arn:aws:iam::aws_account_id:role/ecsTaskExecutionRole"
+            DEFAULT_EXEC_ROLE="arn:aws:iam::aws_account_id:role/ecsExecutionRole"
+
+            TASK_ROLE_ARN=${TASK_ROLE_ARN:-$DEFAULT_TASK_ROLE}
+            EXEC_ROLE_ARN=${EXEC_ROLE_ARN:-$DEFAULT_EXEC_ROLE}
+
+            # Update the image in container definitions
+            NEW_TASK_DEF=$(echo "$TASK_DEF" | jq \
+              --arg IMAGE "$ECR_REGISTRY/$service:latest" \
+              --arg TASK_ROLE_ARN "$TASK_ROLE_ARN" \
+              --arg EXEC_ROLE_ARN "$EXEC_ROLE_ARN" \
+              '.containerDefinitions[0].image = $IMAGE | {
+                family: .family,
+                taskRoleArn: $TASK_ROLE_ARN,
+                executionRoleArn: $EXEC_ROLE_ARN,
+                networkMode: .networkMode,
+                containerDefinitions: .containerDefinitions,
+                requiresCompatibilities: .requiresCompatibilities,
+                cpu: .cpu,
+                memory: .memory
+              }')
 
             # Register new task definition
             NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
