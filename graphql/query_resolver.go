@@ -5,6 +5,7 @@ import (
    "fmt"
 
    "github.com/Shridhar2104/logilo/graphql/models"
+    pb "github.com/Shridhar2104/logilo/shipment/proto/proto"
 )
 
 type queryResolver struct {
@@ -152,6 +153,77 @@ func (r *queryResolver) GetWalletDetails(ctx context.Context, input GetWalletDet
 // Ping is a simple health check method
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
     return "pong", nil
+}
+
+
+// GetShipmentByOrder retrieves shipment details for a specific order
+func (r *queryResolver) GetShipmentByOrder(ctx context.Context, orderID string) (*ShipmentResponse, error) {
+    // Create request for the shipment service
+    req := &pb.OrderTrackingRequest{
+        OrderId: orderID,
+    }
+
+    // Call the shipment service
+    resp, err := r.server.shipmentClient.GetShipmentByOrder(ctx, req)
+    if err != nil {
+        errStr:= err.Error()
+        return &ShipmentResponse{
+            Success: false,
+            Error:  &errStr,
+        }, nil
+    }
+
+    // Convert the response to GraphQL model
+    return &ShipmentResponse{
+        Success:    resp.Success,
+        TrackingID: &resp.TrackingId,
+        CourierAwb: &resp.CourierAwb,
+        Label:      &resp.Label,
+        Error:      &resp.Error,
+    }, nil
+}
+
+// GetAccountShipments retrieves all shipments for an account with pagination
+func (r *queryResolver) GetAccountShipments(ctx context.Context, input AccountShipmentsInput) (*AccountShipmentsResponse, error) {
+    // Create request for the shipment service
+    req := &pb.AccountShipmentsRequest{
+        AccountId: input.AccountID,
+        Page:      int32(input.Page),
+        PageSize:  int32(input.PageSize),
+    }
+
+    // Call the shipment service
+    resp, err := r.server.shipmentClient.GetAccountShipments(ctx, req)
+    if err != nil {
+        errStr := err.Error()
+
+        return &AccountShipmentsResponse{
+            Success: false,
+            Error:   &errStr,
+        }, nil
+    }
+
+    // Convert shipments to GraphQL models
+    var shipments []*ShipmentInfo
+    if resp.Shipments != nil {
+        shipments = make([]*ShipmentInfo, len(resp.Shipments))
+        for i, shipment := range resp.Shipments {
+            shipments[i] = &ShipmentInfo{
+                OrderNumber: shipment.OrderNumber,
+                TrackingID:  shipment.TrackingId,
+                CourierAwb:  shipment.CourierAwb,
+                Status:      shipment.Status,
+                Label:       &shipment.Label,
+                CreatedAt:   shipment.CreatedAt,
+            }
+        }
+    }
+
+    return &AccountShipmentsResponse{
+        Success:   resp.Success,
+        Shipments: shipments,
+        Error:     &resp.Error,
+    }, nil
 }
 
 func (r *queryResolver) GetBankAccount(ctx context.Context, userID string) (*BankAccount, error) {

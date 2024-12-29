@@ -1,0 +1,344 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: logilo
+  ENVIRONMENT: dev
+  ECS_CLUSTER: logilo-cluster-dev
+
+jobs:
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        id: ecr-login
+
+      - name: Create ECR repositories
+        run: |
+          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
+          
+          for service in "${services[@]}"; do
+            echo "Checking or creating repository: $service"
+            
+            if ! aws ecr describe-repositories --repository-names "$service" >/dev/null 2>&1; then
+              echo "Creating repository $service"
+              aws ecr create-repository \
+                --repository-name "$service" \
+                --image-scanning-configuration scanOnPush=true \
+                --tags Key=Environment,Value=${{ env.ENVIRONMENT }} \
+                      Key=Project,Value=${{ env.PROJECT_NAME }}
+            fi
+          done
+
+      - name: Push images to ECR
+        run: |
+          ECR_REGISTRY="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+          
+          declare -A service_mappings=(
+            ["graphql"]="graphql"
+            ["account-service"]="account-service"
+            ["shopify-service"]="shopify-service"
+            ["payment-service"]="payment-service"
+            ["shipment-service"]="shipment-service"
+          )
+
+          for service_name in "${!service_mappings[@]}"; do
+            docker_image="logilog/${service_mappings[$service_name]}"
+            ecr_repo="$ECR_REGISTRY/${service_name}"
+            
+            echo "Processing $service_name service"
+            echo "Docker Hub image: $docker_image"
+            echo "ECR repository: $ecr_repo"
+            
+            # Pull from Docker Hub
+            if ! docker pull "$docker_image:latest"; then
+              echo "Error: Failed to pull image $docker_image:latest"
+              exit 1
+            fi
+            
+            # Tag for ECR
+            if ! docker tag "$docker_image:latest" "$ecr_repo:latest"; then
+              echo "Error: Failed to tag image for ECR"
+              exit 1
+            fi
+            
+            # Push to ECR
+            if ! docker push "$ecr_repo:latest"; then
+              echo "Error: Failed to push image to ECR"
+              exit 1
+            fi
+            
+            echo "Successfully processed $service_name service"
+          done
+
+      - name: Deploy Services
+        run: |
+          TASK_ROLE_ARN="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.PROJECT_NAME }}-task-role-${{ env.ENVIRONMENT }}"
+          EXEC_ROLE_ARN="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.PROJECT_NAME }}-task-execution-role-${{ env.ENVIRONMENT }}"
+
+          declare -A ecs_service_names=(
+            ["graphql"]="graphql"
+            ["account-service"]="account"
+            ["shopify-service"]="shopify"
+            ["payment-service"]="payment"
+            ["shipment-service"]="shipment"
+          )
+          
+          for service in "${!ecs_service_names[@]}"; do
+            ecs_name="${ecs_service_names[$service]}"
+            echo "Updating task definition for $service..."
+            
+            TASK_FAMILY="${{ env.PROJECT_NAME }}-${ecs_name}-${{ env.ENVIRONMENT }}"
+            
+            TASK_DEF=$(aws ecs describe-task-definition \
+              --task-definition "$TASK_FAMILY" \
+              --query 'taskDefinition' \
+              --output json)
+
+            # Update the task definition
+            NEW_TASK_DEF=$(echo "$TASK_DEF" | jq \
+              --arg IMAGE "$ECR_REGISTRY/$service:latest" \
+              --arg TASK_ROLE "$TASK_ROLE_ARN" \
+              --arg EXEC_ROLE "$EXEC_ROLE_ARN" \
+              '.containerDefinitions[0].image = $IMAGE |
+              .taskRoleArn = $TASK_ROLE |
+              .executionRoleArn = $EXEC_ROLE |
+              {
+                family: .family,
+                taskRoleArn: $TASK_ROLE,
+                executionRoleArn: $EXEC_ROLE,
+                networkMode: .networkMode,
+                containerDefinitions: .containerDefinitions,
+                requiresCompatibilities: .requiresCompatibilities,
+                cpu: .cpu,
+                memory: .memory,
+                volumes: (.volumes // []),
+                placementConstraints: (.placementConstraints // [])
+              }')
+
+            # Register new task definition
+            NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+              --cli-input-json "$NEW_TASK_DEF" \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
+
+            echo "Registered new task definition: $NEW_TASK_DEF_ARN"
+
+            # Update the service
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service "${ecs_name}-service" \
+              --task-definition "$NEW_TASK_DEF_ARN" \
+              --force-new-deployment
+
+            echo "Deployed $ecs_name service with new task definition"
+          done
+
+  
+
+# Previous configuration remains the same until the "Wait for services to stabilize" step
+
+      - name: Wait for services to stabilize
+        run: |
+          declare -A ecs_service_names=(
+            ["graphql"]="graphql"
+            ["account-service"]="account"
+            ["shopify-service"]="shopify"
+            ["payment-service"]="payment"
+            ["shipment-service"]="shipment"
+          )
+          
+          for service in "${!ecs_service_names[@]}"; do
+            ecs_name="${ecs_service_names[$service]}"
+            echo "Waiting for ${ecs_name}-service to stabilize..."
+            
+            # Add initial status check
+            aws ecs describe-services \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services "${ecs_name}-service" \
+              --query 'services[0].{Status:status,DesiredCount:desiredCount,RunningCount:runningCount,Events:events[0:2]}' \
+              --output table
+
+            # Try to wait for stability with timeout
+            timeout=900  # 15 minutes timeout
+            endtime=$(($(date +%s) + timeout))
+            
+            while [ $(date +%s) -lt $endtime ]; do
+              if aws ecs wait services-stable \
+                --cluster ${{ env.ECS_CLUSTER }} \
+                --services "${ecs_name}-service" \
+                --max-attempts 15; then
+                echo "${ecs_name}-service is stable"
+                break
+              else
+                echo "Service not yet stable. Checking deployment status..."
+                
+                # Get deployment status
+                deployment_status=$(aws ecs describe-services \
+                  --cluster ${{ env.ECS_CLUSTER }} \
+                  --services "${ecs_name}-service" \
+                  --query 'services[0].deployments[0].{Status:status,DesiredCount:desiredCount,RunningCount:runningCount,FailedTasks:failedTasks}' \
+                  --output json)
+                
+                echo "Current deployment status: $deployment_status"
+                
+                # Check for failed tasks
+                failed_tasks=$(echo $deployment_status | jq -r '.FailedTasks')
+                if [ "$failed_tasks" -gt 0 ]; then
+                  echo "ERROR: Detected failed tasks. Checking task status..."
+                  
+                  # Get task status
+                  aws ecs list-tasks \
+                    --cluster ${{ env.ECS_CLUSTER }} \
+                    --service-name "${ecs_name}-service" \
+                    --desired-status STOPPED \
+                    --query 'taskArns' \
+                    --output text | \
+                  xargs -I {} aws ecs describe-tasks \
+                    --cluster ${{ env.ECS_CLUSTER }} \
+                    --tasks {} \
+                    --query 'tasks[].{LastStatus:lastStatus,StoppedReason:stoppedReason,Containers:containers[].{Name:name,Reason:reason,ExitCode:exitCode}}' \
+                    --output table
+                  
+                  exit 1
+                fi
+                
+                # Wait before next check
+                sleep 30
+              fi
+            done
+            
+            if [ $(date +%s) -ge $endtime ]; then
+              echo "Timeout waiting for ${ecs_name}-service to stabilize"
+              
+              # Final status check
+              aws ecs describe-services \
+                --cluster ${{ env.ECS_CLUSTER }} \
+                --services "${ecs_name}-service" \
+                --query 'services[0].{
+                  Status:status,
+                  DesiredCount:desiredCount,
+                  RunningCount:runningCount,
+                  PendingCount:pendingCount,
+                  Events:events[0:5],
+                  Deployments:deployments[0].{
+                    Status:status,
+                    DesiredCount:desiredCount,
+                    RunningCount:runningCount,
+                    FailedTasks:failedTasks,
+                    RolloutState:rolloutState,
+                    RolloutStateReason:rolloutStateReason
+                  }
+                }' \
+                --output json
+              
+              exit 1
+            fi
+          done
+
+      - name: Check Container Health
+        if: always()
+        run: |
+          declare -A ecs_service_names=(
+            ["graphql"]="graphql"
+            ["account-service"]="account"
+            ["shopify-service"]="shopify"
+            ["payment-service"]="payment"
+            ["shipment-service"]="shipment"
+          )
+          
+          for service in "${!ecs_service_names[@]}"; do
+            ecs_name="${ecs_service_names[$service]}"
+            echo "Checking containers for ${ecs_name}-service..."
+            
+            # Get running tasks
+            task_arns=$(aws ecs list-tasks \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name "${ecs_name}-service" \
+              --desired-status RUNNING \
+              --query 'taskArns[]' \
+              --output text)
+            
+            if [ -n "$task_arns" ]; then
+              echo "Inspecting tasks: $task_arns"
+              aws ecs describe-tasks \
+                --cluster ${{ env.ECS_CLUSTER }} \
+                --tasks $task_arns \
+                --query 'tasks[].{
+                  TaskArn:taskArn,
+                  LastStatus:lastStatus,
+                  HealthStatus:healthStatus,
+                  Containers:containers[].{
+                    Name:name,
+                    Status:lastStatus,
+                    Health:healthStatus,
+                    ExitCode:exitCode,
+                    Reason:reason
+                  }
+                }' \
+                --output table
+            else
+              echo "No running tasks found for ${ecs_name}-service!"
+            fi
+          done
+
+      - name: Verify deployment
+        if: always()
+        run: |
+          declare -A ecs_service_names=(
+            ["graphql"]="graphql"
+            ["account-service"]="account"
+            ["shopify-service"]="shopify"
+            ["payment-service"]="payment"
+            ["shipment-service"]="shipment"
+          )
+          
+          for service in "${!ecs_service_names[@]}"; do
+            ecs_name="${ecs_service_names[$service]}"
+            echo "Final verification for ${ecs_name}-service..."
+            aws ecs describe-services \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services "${ecs_name}-service" \
+              --query 'services[0].{
+                Status: status,
+                DesiredCount: desiredCount,
+                RunningCount: runningCount,
+                PendingCount: pendingCount,
+                Events: events[0:3],
+                Deployments: deployments[0].{
+                  Status: status,
+                  DesiredCount: desiredCount,
+                  RunningCount: runningCount,
+                  FailedTasks: failedTasks,
+                  RolloutState: rolloutState
+                }
+              }' \
+              --output table
+          done

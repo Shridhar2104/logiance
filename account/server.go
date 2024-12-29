@@ -30,7 +30,7 @@ func NewGRPCServer(service Service, port int) error {
     return server.Serve(lis)
 }
 
-// Existing account methods remain unchanged
+// Account methods 
 func (s *grpcServer) CreateAccount(ctx context.Context, r *pb.CreateAccountRequest) (*pb.CreateAccountResponse, error) {
     a, err := s.service.CreateAccount(ctx, r.Name, r.Password, r.Email)
     if err != nil {
@@ -82,7 +82,7 @@ func (s *grpcServer) ListAccounts(ctx context.Context, r *pb.ListAccountsRequest
     }, nil
 }
 
-// New bank account methods
+// bank account methods
 func (s *grpcServer) AddBankAccount(ctx context.Context, r *pb.AddBankAccountRequest) (*pb.AddBankAccountResponse, error) {
     bankAccount, err := s.service.AddBankAccount(
         ctx,
@@ -160,5 +160,145 @@ func (s *grpcServer) DeleteBankAccount(ctx context.Context, r *pb.DeleteBankAcco
 
     return &pb.DeleteBankAccountResponse{
         Success: true,
+    }, nil
+}
+
+// Address Method
+
+func (s *grpcServer) AddAddress(ctx context.Context, r *pb.AddAddressRequest) (*pb.AddAddressResponse, error) {
+    address, err := s.service.AddAddress(
+        ctx,
+        r.UserId,
+        r.ContactPerson,
+        r.ContactNumber,
+        r.EmailAddress,
+        r.CompleteAddress,
+        r.Landmark,
+        r.Pincode,
+        r.City,
+        r.State,
+        r.Country,
+    )
+    if err != nil {
+        log.Printf("Failed to add address: %v", err)
+        return nil, fmt.Errorf("failed to add address: %w", err)
+    }
+
+    return &pb.AddAddressResponse{
+        Address: &pb.Address{
+            Id:              address.ID.String(),
+            UserId:          address.UserID,
+            ContactPerson:   address.ContactPerson,
+            ContactNumber:   address.ContactNumber,
+            EmailAddress:    address.EmailAddress,
+            CompleteAddress: address.CompleteAddress,
+            Landmark:        address.Landmark,
+            Pincode:        address.Pincode,
+            City:           address.City,
+            State:          address.State,
+            Country:        address.Country,
+        },
+    }, nil
+}
+
+func (s *grpcServer) GetAddresses(ctx context.Context, r *pb.GetAddressesRequest) (*pb.GetAddressesResponse, error) {
+    addresses, err := s.service.GetAddresses(ctx, r.UserId)
+    if err != nil {
+        log.Printf("Error while getting addresses: %v", err)
+        return nil, fmt.Errorf("error while getting addresses: %w", err)
+    }
+
+    var protoAddresses []*pb.Address
+    for _, addr := range addresses {
+        protoAddresses = append(protoAddresses, &pb.Address{
+            Id:              addr.ID.String(),
+            UserId:          addr.UserID,
+            ContactPerson:   addr.ContactPerson,
+            ContactNumber:   addr.ContactNumber,
+            EmailAddress:    addr.EmailAddress,
+            CompleteAddress: addr.CompleteAddress,
+            Landmark:        addr.Landmark,
+            Pincode:        addr.Pincode,
+            City:           addr.City,
+            State:          addr.State,
+            Country:        addr.Country,
+        })
+    }
+
+    return &pb.GetAddressesResponse{
+        Addresses: protoAddresses,
+    }, nil
+}
+
+func (s *grpcServer) UpdateAddress(ctx context.Context, r *pb.UpdateAddressRequest) (*pb.UpdateAddressResponse, error) {
+    address, err := s.service.UpdateAddress(
+        ctx,
+        r.Id,
+        r.UserId,
+        r.ContactPerson,
+        r.ContactNumber,
+        r.EmailAddress,
+        r.CompleteAddress,
+        r.Landmark,
+        r.Pincode,
+        r.City,
+        r.State,
+        r.Country,
+    )
+    if err != nil {
+        log.Printf("Failed to update address: %v", err)
+        return nil, fmt.Errorf("failed to update address: %w", err)
+    }
+
+    return &pb.UpdateAddressResponse{
+        Address: &pb.Address{
+            Id:              address.ID.String(),
+            UserId:          address.UserID,
+            ContactPerson:   address.ContactPerson,
+            ContactNumber:   address.ContactNumber,
+            EmailAddress:    address.EmailAddress,
+            CompleteAddress: address.CompleteAddress,
+            Landmark:        address.Landmark,
+            Pincode:        address.Pincode,
+            City:           address.City,
+            State:          address.State,
+            Country:        address.Country,
+        },
+    }, nil
+}
+
+func (s *grpcServer) DeleteAddress(ctx context.Context, r *pb.DeleteAddressRequest) (*pb.DeleteAddressResponse, error) {
+    err := s.service.DeleteAddress(ctx, r.Id)
+    if err != nil {
+        log.Printf("Failed to delete address: %v", err)
+        return nil, fmt.Errorf("failed to delete address: %w", err)
+    }
+
+    return &pb.DeleteAddressResponse{
+        Success: true,
+    }, nil
+}
+
+func (s *grpcServer) GetAddressByID(ctx context.Context, r *pb.GetAddressByIDRequest) (*pb.GetAddressByIDResponse, error) {
+    address, err := s.service.GetAddressByID(ctx, r.Id)
+    if err != nil {
+        log.Printf("Error while getting address by ID: %v", err)
+        return nil, fmt.Errorf("error while getting address by ID: %w", err)
+    }
+
+    return &pb.GetAddressByIDResponse{
+        Address: &pb.Address{
+            Id:              address.ID.String(),
+            UserId:          address.UserID,
+            ContactPerson:   address.ContactPerson,
+            ContactNumber:   address.ContactNumber,
+            EmailAddress:    address.EmailAddress,
+            CompleteAddress: address.CompleteAddress,
+            Landmark:        address.Landmark,
+            Pincode:        address.Pincode,
+            City:           address.City,
+            State:          address.State,
+            Country:        address.Country,
+        },
     }, nil
 }

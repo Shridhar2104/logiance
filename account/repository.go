@@ -11,26 +11,6 @@ import (
     _ "github.com/lib/pq"
 )
 
-// // Account represents the account data structure
-// type Account struct {
-//     ID        string
-//     Name      string
-//     Email     string
-//     Password  string
-//     CreatedAt time.Time
-//     UpdatedAt time.Time
-// }
-
-// // BankAccount represents the bank account data structure
-// type BankAccount struct {
-//     UserID          string
-//     AccountNumber   string
-//     BeneficiaryName string
-//     IFSCCode        string
-//     BankName        string
-//     CreatedAt       time.Time
-//     UpdatedAt       time.Time
-// }
 
 // Repository defines the interface for interacting with the accounts database
 type Repository interface {
@@ -44,6 +24,12 @@ type Repository interface {
     GetBankAccount(ctx context.Context, userID string) (*BankAccount, error)
     UpdateBankAccount(ctx context.Context, bankAccount BankAccount) error
     DeleteBankAccount(ctx context.Context, userID string) error
+    // Address operations
+    AddAddress(ctx context.Context, address Address) error
+    GetAddresses(ctx context.Context, userID string) ([]Address, error)
+    UpdateAddress(ctx context.Context, address Address) error
+    DeleteAddress(ctx context.Context, addressID string) error
+    GetAddressByID(ctx context.Context, addressID string) (*Address, error)  // Updated return type
 }
 
 // postgresRepository is the PostgreSQL implementation of the Repository interface
@@ -263,4 +249,191 @@ func (r *postgresRepository) DeleteBankAccount(ctx context.Context, userID strin
     }
     
     return nil
+}
+
+// AddAddress adds a new address for a user
+func (r *postgresRepository) AddAddress(ctx context.Context, address Address) error {
+    query := `
+        INSERT INTO addresses (id, user_id, contact_person, contact_number, email_address, 
+        complete_address, landmark, pincode, city, state, country, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    `
+    
+    _, err := r.db.ExecContext(
+        ctx,
+        query,
+        address.ID,
+        address.UserID,
+        address.ContactPerson,
+        address.ContactNumber,
+        address.EmailAddress,
+        address.CompleteAddress,
+        address.Landmark,
+        address.Pincode,
+        address.City,
+        address.State,
+        address.Country,
+        time.Now(),
+        time.Now(),
+    )
+    
+    if err != nil {
+        return fmt.Errorf("failed to insert address: %w", err)
+    }
+    return nil
+}
+
+// GetAddresses retrieves all addresses for a user
+func (r *postgresRepository) GetAddresses(ctx context.Context, userID string) ([]Address, error) {
+    query := `
+        SELECT id, user_id, contact_person, contact_number, email_address, 
+        complete_address, landmark, pincode, city, state, country, created_at, updated_at
+        FROM addresses
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+    `
+    
+    rows, err := r.db.QueryContext(ctx, query, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to query addresses: %w", err)
+    }
+    defer rows.Close()
+
+    var addresses []Address
+    for rows.Next() {
+        var addr Address
+        err := rows.Scan(
+            &addr.ID,
+            &addr.UserID,
+            &addr.ContactPerson,
+            &addr.ContactNumber,
+            &addr.EmailAddress,
+            &addr.CompleteAddress,
+            &addr.Landmark,
+            &addr.Pincode,
+            &addr.City,
+            &addr.State,
+            &addr.Country,
+            &addr.CreatedAt,
+            &addr.UpdatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("failed to scan address: %w", err)
+        }
+        addresses = append(addresses, addr)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating address rows: %w", err)
+    }
+    
+    return addresses, nil
+}
+
+// UpdateAddress updates an existing address
+func (r *postgresRepository) UpdateAddress(ctx context.Context, address Address) error {
+    query := `
+        UPDATE addresses
+        SET contact_person = $3,
+            contact_number = $4,
+            email_address = $5,
+            complete_address = $6,
+            landmark = $7,
+            pincode = $8,
+            city = $9,
+            state = $10,
+            country = $11,
+            updated_at = $12
+        WHERE id = $1 AND user_id = $2
+    `
+    
+    result, err := r.db.ExecContext(
+        ctx,
+        query,
+        address.ID,
+        address.UserID,
+        address.ContactPerson,
+        address.ContactNumber,
+        address.EmailAddress,
+        address.CompleteAddress,
+        address.Landmark,
+        address.Pincode,
+        address.City,
+        address.State,
+        address.Country,
+        time.Now(),
+    )
+    
+    if err != nil {
+        return fmt.Errorf("failed to update address: %w", err)
+    }
+    
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("error getting rows affected: %w", err)
+    }
+    
+    if rowsAffected == 0 {
+        return errors.New("address not found")
+    }
+    
+    return nil
+}
+
+// DeleteAddress removes an address
+func (r *postgresRepository) DeleteAddress(ctx context.Context, addressID string) error {
+    query := `DELETE FROM addresses WHERE id = $1`
+    
+    result, err := r.db.ExecContext(ctx, query, addressID)
+    if err != nil {
+        return fmt.Errorf("failed to delete address: %w", err)
+    }
+    
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("error getting rows affected: %w", err)
+    }
+    
+    if rowsAffected == 0 {
+        return errors.New("address not found")
+    }
+    
+    return nil
+}
+
+// GetAddressByID retrieves a specific address by its ID
+// In repository.go, change the function signature to:
+func (r *postgresRepository) GetAddressByID(ctx context.Context, addressID string) (*Address, error) {
+    query := `
+        SELECT id, user_id, contact_person, contact_number, email_address, 
+        complete_address, landmark, pincode, city, state, country, created_at, updated_at
+        FROM addresses
+        WHERE id = $1
+    `
+    
+    var addr Address
+    err := r.db.QueryRowContext(ctx, query, addressID).Scan(
+        &addr.ID,
+        &addr.UserID,
+        &addr.ContactPerson,
+        &addr.ContactNumber,
+        &addr.EmailAddress,
+        &addr.CompleteAddress,
+        &addr.Landmark,
+        &addr.Pincode,
+        &addr.City,
+        &addr.State,
+        &addr.Country,
+        &addr.CreatedAt,
+        &addr.UpdatedAt,
+    )
+    
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return nil, fmt.Errorf("address not found: %w", err)
+        }
+        return nil, fmt.Errorf("failed to query address: %w", err)
+    }
+    
+    return &addr, nil
 }

@@ -16,6 +16,18 @@ type AccountInput struct {
 	Email    string `json:"email"`
 }
 
+type AccountShipmentsInput struct {
+	AccountID string `json:"accountId"`
+	Page      int    `json:"page"`
+	PageSize  int    `json:"pageSize"`
+}
+
+type AccountShipmentsResponse struct {
+	Success   bool            `json:"success"`
+	Shipments []*ShipmentInfo `json:"shipments,omitempty"`
+	Error     *string         `json:"error,omitempty"`
+}
+
 type Accounts struct {
 	Orders []*models.Order `json:"orders"`
 }
@@ -60,6 +72,7 @@ type BankAccountInput struct {
 }
 
 type CreateShipmentInput struct {
+	AccountID         string            `json:"accountId"`
 	CourierCode       string            `json:"courier_code"`
 	OrderNumber       string            `json:"order_number"`
 	PaymentType       PaymentType       `json:"payment_type"`
@@ -183,6 +196,15 @@ type ReturnInfoInput struct {
 	AwbNumber     *string       `json:"awb_number,omitempty"`
 	ReturnReason  *string       `json:"return_reason,omitempty"`
 	ReturnComment *string       `json:"return_comment,omitempty"`
+}
+
+type ShipmentInfo struct {
+	OrderNumber string  `json:"orderNumber"`
+	TrackingID  string  `json:"trackingId"`
+	CourierAwb  string  `json:"courierAwb"`
+	Status      string  `json:"status"`
+	Label       *string `json:"label,omitempty"`
+	CreatedAt   string  `json:"createdAt"`
 }
 
 type ShipmentResponse struct {

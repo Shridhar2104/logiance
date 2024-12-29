@@ -237,6 +237,7 @@ input AvailabilityInput {
 }
 
 input CreateShipmentInput {
+  accountId: ID! 
   courier_code: String!
   order_number: String!
   payment_type: PaymentType!
@@ -350,6 +351,29 @@ type TrackingEvent {
   description: String!
 }
 
+input AccountShipmentsInput {
+    accountId: ID!
+    page: Int!
+    pageSize: Int!
+}
+
+type AccountShipmentsResponse {
+    success: Boolean!
+    shipments: [ShipmentInfo!]
+    error: String
+}
+
+type ShipmentInfo {
+    orderNumber: String!
+    trackingId: String!
+    courierAwb: String!
+    status: String!
+    label: String
+    createdAt: String!
+}
+
+
+
 type Mutation {
    createAccount(Account: AccountInput!): Account!
    integrateShop(shopName: String!): String!
@@ -376,6 +400,10 @@ type Query {
    getOrder(id: String!): Order
    getBankAccount(userId: String!): BankAccount
     getWalletDetails(input: GetWalletDetailsInput!): WalletDetailsResponse!
+        # New tracking queries
+    getShipmentByOrder(orderId: ID!): ShipmentResponse!
+    getAccountShipments(input: AccountShipmentsInput!): AccountShipmentsResponse!
+
     ping: String!
 }
 

@@ -6,7 +6,7 @@ import (
     "log"
     "time"
 
-    pb "github.com/Shridhar2104/logilo/shipment/proto"
+    pb "github.com/Shridhar2104/logilo/shipment/proto/proto"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
 )
@@ -48,7 +48,7 @@ logResponse("Calculate Rates", rateResp, err)
 
     log.Println("\nTesting Create Shipment...")
     shipReq := &pb.CreateShipmentRequest{
-        CourierCode:       "DELHIVERY",    // Correct courier code
+        CourierCode:       "XPRESSBEES",    // Correct courier code
         OrderNumber:       "TEST123",
         PaymentType:       "prepaid",
         PackageWeight:     400,             // Weight in grams    

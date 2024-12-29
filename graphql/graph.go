@@ -11,7 +11,7 @@ import (
 	"github.com/Shridhar2104/logilo/payment"
 	"github.com/Shridhar2104/logilo/shopify"
 
-	pb "github.com/Shridhar2104/logilo/shipment/proto"
+	pb "github.com/Shridhar2104/logilo/shipment/proto/proto"
 
 	"google.golang.org/grpc"
 )

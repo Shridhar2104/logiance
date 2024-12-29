@@ -11,12 +11,13 @@ import (
 	"sync"
 
 	"github.com/Shridhar2104/logilo/shipment/internal/config"
+    "github.com/Shridhar2104/logilo/shipment/internal/database"
 	"github.com/Shridhar2104/logilo/shipment/internal/courier"
 	"github.com/Shridhar2104/logilo/shipment/internal/courier/bluedart"
 	"github.com/Shridhar2104/logilo/shipment/internal/courier/delhivery"
 	"github.com/Shridhar2104/logilo/shipment/internal/courier/xpressbees"
 	"github.com/Shridhar2104/logilo/shipment/internal/ratelimit"
-	pb "github.com/Shridhar2104/logilo/shipment/proto"
+	pb "github.com/Shridhar2104/logilo/shipment/proto/proto"
 )
 
 type ShipmentService struct {
@@ -25,13 +26,16 @@ type ShipmentService struct {
     rateLimiters map[string]*ratelimit.RateLimiter
     providers    map[string]courier.CourierProvider
     mu          sync.RWMutex
+    trackingService *ShipmentTrackingService
 }
 // internal/service/shipping.go
-func NewShipmentService(cfg *config.Config) (*ShipmentService, error) {
+func NewShipmentService(cfg *config.Config,db *database.ShipmentDB) (*ShipmentService, error) {
     s := &ShipmentService{
         cfg:          cfg,
         rateLimiters: make(map[string]*ratelimit.RateLimiter),
         providers:    make(map[string]courier.CourierProvider),
+        trackingService: NewShipmentTrackingService(db),
+
     }
 
     // Register Xpressbees
@@ -275,7 +279,22 @@ func (s *ShipmentService) CreateShipment(ctx context.Context, req *pb.CreateShip
             Error:   err.Error(),
         }, nil
     }
- 
+        // Save tracking information
+        err = s.trackingService.SaveNewShipment(
+            ctx,
+            req.AccountId,  // Make sure to add this field to your proto definition
+            req.OrderNumber,
+            shipment.TrackingID,
+            shipment.AWBNumber,
+            req.CourierCode,
+            shipment.Label,
+        )
+        if err != nil {
+            log.Printf("Error saving tracking info: %v", err)
+            // Continue with the response even if tracking save fails
+            // You might want to implement a retry mechanism or handle this differently
+        }
+    
     return &pb.ShipmentResponse{
         Success:    shipment.Success,
         TrackingId: shipment.TrackingID,
@@ -335,5 +354,116 @@ func (s *ShipmentService) TrackShipment(ctx context.Context, req *pb.TrackingReq
     return &pb.TrackingResponse{
         Success: true,
         Events:  events,
+    }, nil
+}
+
+// Add method to get tracking by order ID
+func (s *ShipmentService) GetShipmentByOrder(ctx context.Context, req *pb.OrderTrackingRequest) (*pb.ShipmentResponse, error) {
+    tracking, err := s.trackingService.GetShipmentByOrder(ctx, req.OrderId)
+    if err != nil {
+        return nil, fmt.Errorf("error getting shipment by order: %w", err)
+    }
+
+    if tracking == nil {
+        return &pb.ShipmentResponse{
+            Success: false,
+            Error:   "no shipment found for order",
+        }, nil
+    }
+
+    return &pb.ShipmentResponse{
+        Success:    true,
+        TrackingId: tracking.TrackingID,
+        CourierAwb: tracking.AWBNumber,
+        Label:      tracking.Label,
+    }, nil
+}
+
+// Add new tracking-related methods
+func (s *ShipmentService) GetShipmentTracking(ctx context.Context, req *pb.TrackingRequest) (*pb.TrackingResponse, error) {
+    // First check the database for existing tracking info
+    tracking, _, err := s.trackingService.GetShipmentDetails(ctx, req.TrackingId)
+    if err != nil {
+        return nil, fmt.Errorf("error getting tracking details: %w", err)
+    }
+
+    // If found in database, use the courier code from there
+    courierCode := req.CourierCode
+    if tracking != nil {
+        courierCode = tracking.CourierCode
+    }
+
+    // Get latest tracking info from courier
+    provider, exists := s.providers[courierCode]
+    if !exists {
+        return nil, fmt.Errorf("unknown courier code: %s", courierCode)
+    }
+
+    if !s.rateLimiters[courierCode].Allow() {
+        return nil, fmt.Errorf("rate limit exceeded for %s", courierCode)
+    }
+
+    // Get tracking events from courier
+    courierEvents, err := provider.TrackShipment(ctx, req.TrackingId)
+    if err != nil {
+        return &pb.TrackingResponse{
+            Success: false,
+            Error:   err.Error(),
+        }, nil
+    }
+
+    // Update database with new events
+    for _, event := range courierEvents {
+        err = s.trackingService.UpdateShipmentStatus(
+            ctx,
+            req.TrackingId,
+            event.Status,
+            event.Location,
+            event.Description,
+        )
+        if err != nil {
+            log.Printf("Error updating tracking status: %v", err)
+        }
+    }
+
+    // Convert tracking events to proto format
+    pbEvents := make([]*pb.TrackingEvent, len(courierEvents))
+    for i, event := range courierEvents {
+        pbEvents[i] = &pb.TrackingEvent{
+            Status:      event.Status,
+            Location:    event.Location,
+            Timestamp:   event.ActivityTime,
+            Description: event.Description,
+        }
+    }
+
+    return &pb.TrackingResponse{
+        Success: true,
+        Events:  pbEvents,
+    }, nil
+}
+
+
+// Add method to get all shipments for an account
+func (s *ShipmentService) GetAccountShipments(ctx context.Context, req *pb.AccountShipmentsRequest) (*pb.AccountShipmentsResponse, error) {
+    shipments, err := s.trackingService.GetShipmentsByAccount(ctx, req.AccountId, int(req.Page), int(req.PageSize))
+    if err != nil {
+        return nil, fmt.Errorf("error getting account shipments: %w", err)
+    }
+
+    pbShipments := make([]*pb.ShipmentInfo, len(shipments))
+    for i, shipment := range shipments {
+        pbShipments[i] = &pb.ShipmentInfo{
+            OrderNumber: shipment.OrderID,
+            TrackingId: shipment.TrackingID,
+            CourierAwb: shipment.AWBNumber,
+            Status:     shipment.Status,
+            Label:      shipment.Label,
+        }
+    }
+
+    return &pb.AccountShipmentsResponse{
+        Success:   true,
+        Shipments: pbShipments,
     }, nil
 }
