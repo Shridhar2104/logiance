@@ -10,6 +10,8 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  PROJECT_NAME: logilo
+  ENVIRONMENT: dev
   ECS_CLUSTER: logilo-cluster-dev
 
 jobs:
@@ -18,22 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
-    environment: production  # Add this line to use environment secrets
+    environment: production
 
     steps:
-      - name: Debug AWS Credentials
-        run: |
-          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
-            echo "AWS Access Key is set"
-          else
-            echo "AWS Access Key is NOT set"
-          fi
-          if [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
-            echo "AWS Secret Key is set"
-          else
-            echo "AWS Secret Key is NOT set"
-          fi
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -41,115 +30,107 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Verify AWS credentials
-        run: |
-          aws sts get-caller-identity
-          echo "AWS credentials verified"
-
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
+        id: ecr-login
 
       - name: Create ECR repositories
         run: |
-          services=("graphql" "account-service" "shopify-service" "payment-service" "shipment-service")
+          # Define service names consistently
+          services=("graphql" "account" "shopify" "payment" "shipment")
+          
           for service in "${services[@]}"; do
-            echo "Checking or creating repository: $service"
-            if aws ecr describe-repositories --repository-names $service >/dev/null 2>&1; then
-              echo "Repository $service already exists."
-            else
-              echo "Creating repository $service."
+            repo_name="${service}"
+            echo "Checking or creating repository: $repo_name"
+            
+            if ! aws ecr describe-repositories --repository-names "$repo_name" >/dev/null 2>&1; then
+              echo "Creating repository $repo_name"
               aws ecr create-repository \
-                --repository-name $service \
-                --image-scanning-configuration scanOnPush=true
+                --repository-name "$repo_name" \
+                --image-scanning-configuration scanOnPush=true \
+                --tags Key=Environment,Value=${{ env.ENVIRONMENT }} \
+                      Key=Project,Value=${{ env.PROJECT_NAME }}
             fi
           done
 
       - name: Push images to ECR
         run: |
-          # Set ECR registry URL
           ECR_REGISTRY="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
           
+          # Define service mappings with consistent naming
           declare -A service_mappings=(
             ["graphql"]="graphql"
-            ["account"]="account-service"
-            ["shopify"]="shopify-service"
-            ["payment"]="payment-service"
-            ["shipment"]="shipment-service"
+            ["account"]="account"
+            ["shopify"]="shopify"
+            ["payment"]="payment"
+            ["shipment"]="shipment"
           )
 
-          for repo_name in "${!service_mappings[@]}"; do
-            docker_image="logilog/${service_mappings[$repo_name]}"
-            ecr_repo="$ECR_REGISTRY/$repo_name"
+          for service_name in "${!service_mappings[@]}"; do
+            docker_image="${{ env.PROJECT_NAME }}/${service_mappings[$service_name]}"
+            ecr_repo="$ECR_REGISTRY/${service_name}"
             
-            echo "Processing $repo_name service"
-            echo "Docker Hub image: $docker_image"
-            echo "ECR repository: $ecr_repo"
+            echo "Processing $service_name service"
             
             # Pull from Docker Hub
-            docker pull "$docker_image:latest" || {
+            if ! docker pull "$docker_image:latest"; then
               echo "Error: Failed to pull image $docker_image:latest"
               exit 1
-            }
+            fi
             
             # Tag for ECR
-            docker tag "$docker_image:latest" "$ecr_repo:latest" || {
+            if ! docker tag "$docker_image:latest" "$ecr_repo:latest"; then
               echo "Error: Failed to tag image for ECR"
               exit 1
-            }
+            fi
             
             # Push to ECR
-            docker push "$ecr_repo:latest" || {
+            if ! docker push "$ecr_repo:latest"; then
               echo "Error: Failed to push image to ECR"
               exit 1
-            }
+            fi
             
-            echo "Successfully processed $repo_name service"
+            echo "Successfully processed $service_name service"
           done
 
       - name: Deploy Services
         run: |
-          declare -A service_mappings=(
-            ["graphql"]="graphql"
-            ["account-service"]="account"
-            ["shopify-service"]="shopify"
-            ["payment-service"]="payment"
-            ["shipment-service"]="shipment"
-          )
+          # Set correct role ARNs based on project name and environment
+          TASK_ROLE_ARN="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.PROJECT_NAME }}-task-role-${{ env.ENVIRONMENT }}"
+          EXEC_ROLE_ARN="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.PROJECT_NAME }}-task-execution-role-${{ env.ENVIRONMENT }}"
 
-          for service in "${!service_mappings[@]}"; do
+          services=("graphql" "account" "shopify" "payment" "shipment")
+          
+          for service in "${services[@]}"; do
             echo "Updating task definition for $service..."
+            
+            TASK_FAMILY="${{ env.PROJECT_NAME }}-${service}-${{ env.ENVIRONMENT }}"
             
             # Get current task definition
             TASK_DEF=$(aws ecs describe-task-definition \
-              --task-definition logilo-${service_mappings[$service]}-dev \
+              --task-definition "$TASK_FAMILY" \
               --query 'taskDefinition' \
               --output json)
 
-            TASK_ROLE_ARN=${TASK_ROLE_ARN:-"arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole"}
-            EXEC_ROLE_ARN=${EXEC_ROLE_ARN:-"arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsExecutionRole"}
-
-
-            # Use default if either value is null
-            DEFAULT_TASK_ROLE="arn:aws:iam::aws_account_id:role/ecsTaskExecutionRole"
-            DEFAULT_EXEC_ROLE="arn:aws:iam::aws_account_id:role/ecsExecutionRole"
-
-            TASK_ROLE_ARN=${TASK_ROLE_ARN:-$DEFAULT_TASK_ROLE}
-            EXEC_ROLE_ARN=${EXEC_ROLE_ARN:-$DEFAULT_EXEC_ROLE}
-
-            # Update the image in container definitions
+            # Update the task definition
             NEW_TASK_DEF=$(echo "$TASK_DEF" | jq \
               --arg IMAGE "$ECR_REGISTRY/$service:latest" \
-              --arg TASK_ROLE_ARN "$TASK_ROLE_ARN" \
-              --arg EXEC_ROLE_ARN "$EXEC_ROLE_ARN" \
-              '.containerDefinitions[0].image = $IMAGE | {
+              --arg TASK_ROLE "$TASK_ROLE_ARN" \
+              --arg EXEC_ROLE "$EXEC_ROLE_ARN" \
+              '.containerDefinitions[0].image = $IMAGE |
+              .taskRoleArn = $TASK_ROLE |
+              .executionRoleArn = $EXEC_ROLE |
+              {
                 family: .family,
-                taskRoleArn: $TASK_ROLE_ARN,
-                executionRoleArn: $EXEC_ROLE_ARN,
+                taskRoleArn: $TASK_ROLE,
+                executionRoleArn: $EXEC_ROLE,
                 networkMode: .networkMode,
                 containerDefinitions: .containerDefinitions,
                 requiresCompatibilities: .requiresCompatibilities,
                 cpu: .cpu,
-                memory: .memory
+                memory: .memory,
+                volumes: (.volumes // []),
+                placementConstraints: (.placementConstraints // [])
               }')
 
             # Register new task definition
@@ -158,36 +139,46 @@ jobs:
               --query 'taskDefinition.taskDefinitionArn' \
               --output text)
 
-            echo "Deploying ${service_mappings[$service]} service with new task definition: $NEW_TASK_DEF_ARN"
+            echo "Registered new task definition: $NEW_TASK_DEF_ARN"
 
             # Update the service
             aws ecs update-service \
               --cluster ${{ env.ECS_CLUSTER }} \
-              --service ${service_mappings[$service]}-service \
-              --force-new-deployment \
-              --task-definition "$NEW_TASK_DEF_ARN"
+              --service "${service}-service" \
+              --task-definition "$NEW_TASK_DEF_ARN" \
+              --force-new-deployment
+
+            echo "Deployed $service service with new task definition"
           done
 
       - name: Wait for services to stabilize
         run: |
           services=("graphql" "account" "shopify" "payment" "shipment")
+          
           for service in "${services[@]}"; do
-            echo "Waiting for $service-service to stabilize..."
+            echo "Waiting for ${service}-service to stabilize..."
             aws ecs wait services-stable \
               --cluster ${{ env.ECS_CLUSTER }} \
-              --services ${service}-service
-            echo "$service-service is stable."
+              --services "${service}-service"
+            echo "${service}-service is stable"
           done
 
       - name: Verify deployment
         if: always()
         run: |
           services=("graphql" "account" "shopify" "payment" "shipment")
+          
           for service in "${services[@]}"; do
             echo "Verifying deployment for ${service}-service..."
             aws ecs describe-services \
               --cluster ${{ env.ECS_CLUSTER }} \
-              --services ${service}-service \
-              --query 'services[0].{Status:status,DesiredCount:desiredCount,RunningCount:runningCount,Events:events[0:3]}' \
+              --services "${service}-service" \
+              --query 'services[0].{
+                Status: status,
+                DesiredCount: desiredCount,
+                RunningCount: runningCount,
+                PendingCount: pendingCount,
+                Events: events[0:3]
+              }' \
               --output table
           done
