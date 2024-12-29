@@ -3,7 +3,7 @@ syntax = "proto3";
 package pb;
 option go_package = "/pb";
 
-// Existing Account messages
+// Account messages
 message Account {
     string id = 1;
     string name = 2;
@@ -39,7 +39,7 @@ message ListAccountsResponse {
     repeated Account accounts = 1;
 }
 
-// New Bank Account messages
+// Bank Account messages
 message BankAccount {
     string user_id = 1;
     string account_number = 2;
@@ -88,15 +88,96 @@ message DeleteBankAccountResponse {
     bool success = 1;
 }
 
+// Add Address message type
+message Address {
+    string id = 1;
+    string user_id = 2;
+    string contact_person = 3;
+    string contact_number = 4;
+    string email_address = 5;
+    string complete_address = 6;
+    string landmark = 7;
+    string pincode = 8;
+    string city = 9;
+    string state = 10;
+    string country = 11;
+}
+
+// Address request/response messages
+message AddAddressRequest {
+    string user_id = 1;
+    string contact_person = 2;
+    string contact_number = 3;
+    string email_address = 4;
+    string complete_address = 5;
+    string landmark = 6;
+    string pincode = 7;
+    string city = 8;
+    string state = 9;
+    string country = 10;
+}
+
+message AddAddressResponse {
+    Address address = 1;
+}
+
+message GetAddressesRequest {
+    string user_id = 1;
+}
+
+message GetAddressesResponse {
+    repeated Address addresses = 1;
+}
+
+message UpdateAddressRequest {
+    string id = 1;
+    string user_id = 2;
+    string contact_person = 3;
+    string contact_number = 4;
+    string email_address = 5;
+    string complete_address = 6;
+    string landmark = 7;
+    string pincode = 8;
+    string city = 9;
+    string state = 10;
+    string country = 11;
+}
+
+message UpdateAddressResponse {
+    Address address = 1;
+}
+
+message DeleteAddressRequest {
+    string id = 1;
+}
+
+message DeleteAddressResponse {
+    bool success = 1;
+}
+
+message GetAddressByIDRequest {
+    string id = 1;
+}
+
+message GetAddressByIDResponse {
+    Address address = 1;
+}
+
 service AccountService {
-    // Existing account methods
+    // account methods
     rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {}
     rpc GetAccountByEmailAndPassword(GetAccountByEmailAndPasswordRequest) returns (GetAccountByEmailAndPasswordResponse) {}
     rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {}
     
-    // New bank account methods
+    // bank account methods
     rpc AddBankAccount(AddBankAccountRequest) returns (AddBankAccountResponse) {}
     rpc GetBankAccount(GetBankAccountRequest) returns (GetBankAccountResponse) {}
     rpc UpdateBankAccount(UpdateBankAccountRequest) returns (UpdateBankAccountResponse) {}
     rpc DeleteBankAccount(DeleteBankAccountRequest) returns (DeleteBankAccountResponse) {}
+    // Address operations
+    rpc AddAddress(AddAddressRequest) returns (AddAddressResponse) {}
+    rpc GetAddresses(GetAddressesRequest) returns (GetAddressesResponse) {}
+    rpc UpdateAddress(UpdateAddressRequest) returns (UpdateAddressResponse) {}
+    rpc DeleteAddress(DeleteAddressRequest) returns (DeleteAddressResponse) {}
+    rpc GetAddressByID(GetAddressByIDRequest) returns (GetAddressByIDResponse) {}
 }
