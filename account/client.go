@@ -186,3 +186,143 @@ func (c *Client) DeleteBankAccount(ctx context.Context, userID string) error {
 
     return nil
 }
+
+// AddAddress sends a request to create a new address for a user
+func (c *Client) AddAddress(ctx context.Context, address *Address) (*Address, error) {
+    res, err := c.service.AddAddress(ctx, &pb.AddAddressRequest{
+        UserId:          address.UserID,
+        ContactPerson:   address.ContactPerson,
+        ContactNumber:   address.ContactNumber,
+        EmailAddress:    address.EmailAddress,
+        CompleteAddress: address.CompleteAddress,
+        Landmark:        address.Landmark,
+        Pincode:        address.Pincode,
+        City:           address.City,
+        State:          address.State,
+        Country:        address.Country,
+    })
+    
+    if err != nil {
+        log.Printf("Error adding address: %v", err)
+        return nil, err
+    }
+
+    return &Address{
+        ID:              uuid.MustParse(res.Address.Id),
+        UserID:          res.Address.UserId,
+        ContactPerson:   res.Address.ContactPerson,
+        ContactNumber:   res.Address.ContactNumber,
+        EmailAddress:    res.Address.EmailAddress,
+        CompleteAddress: res.Address.CompleteAddress,
+        Landmark:        res.Address.Landmark,
+        Pincode:        res.Address.Pincode,
+        City:           res.Address.City,
+        State:          res.Address.State,
+        Country:        res.Address.Country,
+        CreatedAt:       time.Now(),
+        UpdatedAt:       time.Now(),
+    }, nil
+}
+
+// GetAddresses retrieves all addresses for a specific user
+func (c *Client) GetAddresses(ctx context.Context, userID string) ([]Address, error) {
+    res, err := c.service.GetAddresses(ctx, &pb.GetAddressesRequest{
+        UserId: userID,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    addresses := make([]Address, len(res.Addresses))
+    for i, addr := range res.Addresses {
+        addresses[i] = Address{
+            ID:              uuid.MustParse(addr.Id),
+            UserID:          addr.UserId,
+            ContactPerson:   addr.ContactPerson,
+            ContactNumber:   addr.ContactNumber,
+            EmailAddress:    addr.EmailAddress,
+            CompleteAddress: addr.CompleteAddress,
+            Landmark:        addr.Landmark,
+            Pincode:        addr.Pincode,
+            City:           addr.City,
+            State:          addr.State,
+            Country:        addr.Country,
+        }
+    }
+    return addresses, nil
+}
+
+// UpdateAddress sends a request to update an existing address
+func (c *Client) UpdateAddress(ctx context.Context, address *Address) (*Address, error) {
+    res, err := c.service.UpdateAddress(ctx, &pb.UpdateAddressRequest{
+        Id:              address.ID.String(),
+        UserId:          address.UserID,
+        ContactPerson:   address.ContactPerson,
+        ContactNumber:   address.ContactNumber,
+        EmailAddress:    address.EmailAddress,
+        CompleteAddress: address.CompleteAddress,
+        Landmark:        address.Landmark,
+        Pincode:        address.Pincode,
+        City:           address.City,
+        State:          address.State,
+        Country:        address.Country,
+    })
+    
+    if err != nil {
+        log.Printf("Error updating address: %v", err)
+        return nil, err
+    }
+
+    return &Address{
+        ID:              uuid.MustParse(res.Address.Id),
+        UserID:          res.Address.UserId,
+        ContactPerson:   res.Address.ContactPerson,
+        ContactNumber:   res.Address.ContactNumber,
+        EmailAddress:    res.Address.EmailAddress,
+        CompleteAddress: res.Address.CompleteAddress,
+        Landmark:        res.Address.Landmark,
+        Pincode:        res.Address.Pincode,
+        City:           res.Address.City,
+        State:          res.Address.State,
+        Country:        res.Address.Country,
+        UpdatedAt:       time.Now(),
+    }, nil
+}
+
+// DeleteAddress sends a request to remove an address
+func (c *Client) DeleteAddress(ctx context.Context, addressID string) error {
+    _, err := c.service.DeleteAddress(ctx, &pb.DeleteAddressRequest{
+        Id: addressID,
+    })
+    if err != nil {
+        log.Printf("Error deleting address: %v", err)
+        return err
+    }
+
+    return nil
+}
+
+// GetAddressByID retrieves a specific address by its ID
+func (c *Client) GetAddressByID(ctx context.Context, addressID string) (*Address, error) {
+    res, err := c.service.GetAddressByID(ctx, &pb.GetAddressByIDRequest{
+        Id: addressID,
+    })
+    if err != nil {
+        log.Printf("Error getting address by ID: %v", err)
+        return nil, err
+    }
+
+    return &Address{
+        ID:              uuid.MustParse(res.Address.Id),
+        UserID:          res.Address.UserId,
+        ContactPerson:   res.Address.ContactPerson,
+        ContactNumber:   res.Address.ContactNumber,
+        EmailAddress:    res.Address.EmailAddress,
+        CompleteAddress: res.Address.CompleteAddress,
+        Landmark:        res.Address.Landmark,
+        Pincode:        res.Address.Pincode,
+        City:           res.Address.City,
+        State:          res.Address.State,
+        Country:        res.Address.Country,
+    }, nil
+}

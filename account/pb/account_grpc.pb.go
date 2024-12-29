@@ -26,21 +26,32 @@ const (
 	AccountService_GetBankAccount_FullMethodName               = "/pb.AccountService/GetBankAccount"
 	AccountService_UpdateBankAccount_FullMethodName            = "/pb.AccountService/UpdateBankAccount"
 	AccountService_DeleteBankAccount_FullMethodName            = "/pb.AccountService/DeleteBankAccount"
+	AccountService_AddAddress_FullMethodName                   = "/pb.AccountService/AddAddress"
+	AccountService_GetAddresses_FullMethodName                 = "/pb.AccountService/GetAddresses"
+	AccountService_UpdateAddress_FullMethodName                = "/pb.AccountService/UpdateAddress"
+	AccountService_DeleteAddress_FullMethodName                = "/pb.AccountService/DeleteAddress"
+	AccountService_GetAddressByID_FullMethodName               = "/pb.AccountService/GetAddressByID"
 )
 
 // AccountServiceClient is the client API for AccountService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountServiceClient interface {
-	// Existing account methods
+	// account methods
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*CreateAccountResponse, error)
 	GetAccountByEmailAndPassword(ctx context.Context, in *GetAccountByEmailAndPasswordRequest, opts ...grpc.CallOption) (*GetAccountByEmailAndPasswordResponse, error)
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
-	// New bank account methods
+	// bank account methods
 	AddBankAccount(ctx context.Context, in *AddBankAccountRequest, opts ...grpc.CallOption) (*AddBankAccountResponse, error)
 	GetBankAccount(ctx context.Context, in *GetBankAccountRequest, opts ...grpc.CallOption) (*GetBankAccountResponse, error)
 	UpdateBankAccount(ctx context.Context, in *UpdateBankAccountRequest, opts ...grpc.CallOption) (*UpdateBankAccountResponse, error)
 	DeleteBankAccount(ctx context.Context, in *DeleteBankAccountRequest, opts ...grpc.CallOption) (*DeleteBankAccountResponse, error)
+	// Address operations
+	AddAddress(ctx context.Context, in *AddAddressRequest, opts ...grpc.CallOption) (*AddAddressResponse, error)
+	GetAddresses(ctx context.Context, in *GetAddressesRequest, opts ...grpc.CallOption) (*GetAddressesResponse, error)
+	UpdateAddress(ctx context.Context, in *UpdateAddressRequest, opts ...grpc.CallOption) (*UpdateAddressResponse, error)
+	DeleteAddress(ctx context.Context, in *DeleteAddressRequest, opts ...grpc.CallOption) (*DeleteAddressResponse, error)
+	GetAddressByID(ctx context.Context, in *GetAddressByIDRequest, opts ...grpc.CallOption) (*GetAddressByIDResponse, error)
 }
 
 type accountServiceClient struct {
@@ -121,19 +132,75 @@ func (c *accountServiceClient) DeleteBankAccount(ctx context.Context, in *Delete
 	return out, nil
 }
 
+func (c *accountServiceClient) AddAddress(ctx context.Context, in *AddAddressRequest, opts ...grpc.CallOption) (*AddAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddAddressResponse)
+	err := c.cc.Invoke(ctx, AccountService_AddAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) GetAddresses(ctx context.Context, in *GetAddressesRequest, opts ...grpc.CallOption) (*GetAddressesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAddressesResponse)
+	err := c.cc.Invoke(ctx, AccountService_GetAddresses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) UpdateAddress(ctx context.Context, in *UpdateAddressRequest, opts ...grpc.CallOption) (*UpdateAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateAddressResponse)
+	err := c.cc.Invoke(ctx, AccountService_UpdateAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) DeleteAddress(ctx context.Context, in *DeleteAddressRequest, opts ...grpc.CallOption) (*DeleteAddressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteAddressResponse)
+	err := c.cc.Invoke(ctx, AccountService_DeleteAddress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) GetAddressByID(ctx context.Context, in *GetAddressByIDRequest, opts ...grpc.CallOption) (*GetAddressByIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAddressByIDResponse)
+	err := c.cc.Invoke(ctx, AccountService_GetAddressByID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
 type AccountServiceServer interface {
-	// Existing account methods
+	// account methods
 	CreateAccount(context.Context, *CreateAccountRequest) (*CreateAccountResponse, error)
 	GetAccountByEmailAndPassword(context.Context, *GetAccountByEmailAndPasswordRequest) (*GetAccountByEmailAndPasswordResponse, error)
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
-	// New bank account methods
+	// bank account methods
 	AddBankAccount(context.Context, *AddBankAccountRequest) (*AddBankAccountResponse, error)
 	GetBankAccount(context.Context, *GetBankAccountRequest) (*GetBankAccountResponse, error)
 	UpdateBankAccount(context.Context, *UpdateBankAccountRequest) (*UpdateBankAccountResponse, error)
 	DeleteBankAccount(context.Context, *DeleteBankAccountRequest) (*DeleteBankAccountResponse, error)
+	// Address operations
+	AddAddress(context.Context, *AddAddressRequest) (*AddAddressResponse, error)
+	GetAddresses(context.Context, *GetAddressesRequest) (*GetAddressesResponse, error)
+	UpdateAddress(context.Context, *UpdateAddressRequest) (*UpdateAddressResponse, error)
+	DeleteAddress(context.Context, *DeleteAddressRequest) (*DeleteAddressResponse, error)
+	GetAddressByID(context.Context, *GetAddressByIDRequest) (*GetAddressByIDResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -164,6 +231,21 @@ func (UnimplementedAccountServiceServer) UpdateBankAccount(context.Context, *Upd
 }
 func (UnimplementedAccountServiceServer) DeleteBankAccount(context.Context, *DeleteBankAccountRequest) (*DeleteBankAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteBankAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) AddAddress(context.Context, *AddAddressRequest) (*AddAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAddress not implemented")
+}
+func (UnimplementedAccountServiceServer) GetAddresses(context.Context, *GetAddressesRequest) (*GetAddressesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAddresses not implemented")
+}
+func (UnimplementedAccountServiceServer) UpdateAddress(context.Context, *UpdateAddressRequest) (*UpdateAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAddress not implemented")
+}
+func (UnimplementedAccountServiceServer) DeleteAddress(context.Context, *DeleteAddressRequest) (*DeleteAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAddress not implemented")
+}
+func (UnimplementedAccountServiceServer) GetAddressByID(context.Context, *GetAddressByIDRequest) (*GetAddressByIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAddressByID not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -312,6 +394,96 @@ func _AccountService_DeleteBankAccount_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_AddAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).AddAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_AddAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).AddAddress(ctx, req.(*AddAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_GetAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAddressesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetAddresses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetAddresses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetAddresses(ctx, req.(*GetAddressesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UpdateAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UpdateAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_UpdateAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UpdateAddress(ctx, req.(*UpdateAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_DeleteAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).DeleteAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_DeleteAddress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).DeleteAddress(ctx, req.(*DeleteAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_GetAddressByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAddressByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetAddressByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetAddressByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetAddressByID(ctx, req.(*GetAddressByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +518,26 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteBankAccount",
 			Handler:    _AccountService_DeleteBankAccount_Handler,
+		},
+		{
+			MethodName: "AddAddress",
+			Handler:    _AccountService_AddAddress_Handler,
+		},
+		{
+			MethodName: "GetAddresses",
+			Handler:    _AccountService_GetAddresses_Handler,
+		},
+		{
+			MethodName: "UpdateAddress",
+			Handler:    _AccountService_UpdateAddress_Handler,
+		},
+		{
+			MethodName: "DeleteAddress",
+			Handler:    _AccountService_DeleteAddress_Handler,
+		},
+		{
+			MethodName: "GetAddressByID",
+			Handler:    _AccountService_GetAddressByID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
