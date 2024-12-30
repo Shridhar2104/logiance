@@ -1,5 +1,36 @@
 scalar DateTime
 
+# Change 'Address' type to 'WareHouse'
+type WareHouse {
+    id: String!
+    userId: String!
+    contactPerson: String!
+    contactNumber: String!
+    emailAddress: String!
+    completeAddress: String!
+    landmark: String
+    pincode: String!
+    city: String!
+    state: String!
+    country: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+# Change AddressInput to WareHouseInput
+input WareHouseInput {
+    contactPerson: String!
+    contactNumber: String!
+    emailAddress: String!
+    completeAddress: String!
+    landmark: String
+    pincode: String!
+    city: String!
+    state: String!
+    country: String!
+}
+
+# Update Account type to use warehouses instead of addresses
 type Account {
    id: String!
    name: String!
@@ -8,6 +39,7 @@ type Account {
    orders: [Order!]!
    shopnames: [ShopName!]!
    bankAccount: BankAccount
+   warehouses: [WareHouse!]!  # Changed from addresses
 }
 
 type BankAccount {
@@ -391,6 +423,11 @@ type Mutation {
    addBankAccount(userId: String!, bankAccount: BankAccountInput!): BankAccount!
    updateBankAccount(userId: String!, bankAccount: BankAccountInput!): BankAccount!
    deleteBankAccount(userId: String!): Boolean!
+
+   # WareHouse mutations (changed from Address)
+    addWareHouse(userId: String!, warehouse: WareHouseInput!): WareHouse!
+    updateWareHouse(id: String!, warehouse: WareHouseInput!): WareHouse!
+    deleteWareHouse(id: String!): Boolean!
 }
 
 type Query {
@@ -405,6 +442,10 @@ type Query {
     getAccountShipments(input: AccountShipmentsInput!): AccountShipmentsResponse!
 
     ping: String!
+
+    # WareHouse queries (changed from Address)
+    getWareHouses(userId: String!): [WareHouse!]!
+    getWareHouseById(id: String!): WareHouse
 }
 
 type Accounts {

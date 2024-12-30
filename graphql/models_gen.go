@@ -263,6 +263,34 @@ type WalletOperationResponse struct {
 	Errors     []*Error `json:"errors,omitempty"`
 }
 
+type WareHouse struct {
+	ID              string  `json:"id"`
+	UserID          string  `json:"userId"`
+	ContactPerson   string  `json:"contactPerson"`
+	ContactNumber   string  `json:"contactNumber"`
+	EmailAddress    string  `json:"emailAddress"`
+	CompleteAddress string  `json:"completeAddress"`
+	Landmark        *string `json:"landmark,omitempty"`
+	Pincode         string  `json:"pincode"`
+	City            string  `json:"city"`
+	State           string  `json:"state"`
+	Country         string  `json:"country"`
+	CreatedAt       string  `json:"createdAt"`
+	UpdatedAt       string  `json:"updatedAt"`
+}
+
+type WareHouseInput struct {
+	ContactPerson   string  `json:"contactPerson"`
+	ContactNumber   string  `json:"contactNumber"`
+	EmailAddress    string  `json:"emailAddress"`
+	CompleteAddress string  `json:"completeAddress"`
+	Landmark        *string `json:"landmark,omitempty"`
+	Pincode         string  `json:"pincode"`
+	City            string  `json:"city"`
+	State           string  `json:"state"`
+	Country         string  `json:"country"`
+}
+
 type OrderSortField string
 
 const (

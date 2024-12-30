@@ -3,7 +3,7 @@ package main
 import (
 	"context"
     "fmt"
-
+    "github.com/google/uuid"
 	"github.com/Shridhar2104/logilo/account"
 	"github.com/Shridhar2104/logilo/graphql/models"
 )
@@ -212,3 +212,97 @@ func (r *mutationResolver) AddBankAccount(ctx context.Context, userID string, in
     }
     return true, nil
  }
+
+ func (r *mutationResolver) AddWareHouse(ctx context.Context, userID string, input WareHouseInput) (*WareHouse, error) {
+    // Handle nil Landmark properly
+    var landmark string
+    if input.Landmark != nil {
+        landmark = *input.Landmark
+    }
+
+    wh := &account.Address{
+        UserID:          userID,
+        ContactPerson:   input.ContactPerson,
+        ContactNumber:   input.ContactNumber,
+        EmailAddress:    input.EmailAddress,
+        CompleteAddress: input.CompleteAddress,
+        Landmark:        landmark,
+        Pincode:        input.Pincode,
+        City:           input.City,
+        State:          input.State,
+        Country:        input.Country,
+    }
+    
+    resp, err := r.server.accountClient.AddAddress(ctx, wh)
+    if err != nil {
+        return nil, fmt.Errorf("failed to add warehouse: %w", err)
+    }
+
+    landmark = resp.Landmark
+    return &WareHouse{
+        ID:              resp.ID.String(),
+        UserID:          resp.UserID,
+        ContactPerson:   resp.ContactPerson,
+        ContactNumber:   resp.ContactNumber,
+        EmailAddress:    resp.EmailAddress,
+        CompleteAddress: resp.CompleteAddress,
+        Landmark:        &landmark,
+        Pincode:        resp.Pincode,
+        City:           resp.City,
+        State:          resp.State,
+        Country:        resp.Country,
+        // CreatedAt:      resp.CreatedAt,
+        // UpdatedAt:      resp.UpdatedAt,
+    }, nil
+}
+
+func (r *mutationResolver) UpdateWareHouse(ctx context.Context, id string, input WareHouseInput) (*WareHouse, error) {
+    // Handle nil Landmark properly
+    var landmark string
+    if input.Landmark != nil {
+        landmark = *input.Landmark
+    }
+
+    wh := &account.Address{
+        ID:              uuid.MustParse(id),
+        ContactPerson:   input.ContactPerson,
+        ContactNumber:   input.ContactNumber,
+        EmailAddress:    input.EmailAddress,
+        CompleteAddress: input.CompleteAddress,
+        Landmark:        landmark,
+        Pincode:        input.Pincode,
+        City:           input.City,
+        State:          input.State,
+        Country:        input.Country,
+    }
+
+    resp, err := r.server.accountClient.UpdateAddress(ctx, wh)
+    if err != nil {
+        return nil, fmt.Errorf("failed to update warehouse: %w", err)
+    }
+
+    landmark = resp.Landmark
+    return &WareHouse{
+        ID:              resp.ID.String(),
+        UserID:          resp.UserID,
+        ContactPerson:   resp.ContactPerson,
+        ContactNumber:   resp.ContactNumber,
+        EmailAddress:    resp.EmailAddress,
+        CompleteAddress: resp.CompleteAddress,
+        Landmark:        &landmark,
+        Pincode:        resp.Pincode,
+        City:           resp.City,
+        State:          resp.State,
+        Country:        resp.Country,
+        // CreatedAt:      resp.CreatedAt,
+        // UpdatedAt:      resp.UpdatedAt,
+    }, nil
+}
+
+func (r *mutationResolver) DeleteWareHouse(ctx context.Context, id string) (bool, error) {
+    err := r.server.accountClient.DeleteAddress(ctx, id)
+    if err != nil {
+        return false, fmt.Errorf("failed to delete warehouse: %w", err)
+    }
+    return true, nil
+}

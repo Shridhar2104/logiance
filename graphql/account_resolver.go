@@ -32,6 +32,40 @@ func (r *accountResolver) BankAccount(ctx context.Context, obj *models.Account) 
     }, nil
 }
 
+// Warehouses resolver for Account type
+func (r *accountResolver) Warehouses(ctx context.Context, obj *models.Account) ([]*WareHouse, error) {
+    if obj.ID == "" {
+        return nil, nil
+    }
+
+    warehouses, err := r.server.accountClient.GetAddresses(ctx, obj.ID)
+    if err != nil {
+        return nil, err
+    }
+
+    result := make([]*WareHouse, len(warehouses))
+    for i, wh := range warehouses {
+        landmark := wh.Landmark
+        result[i] = &WareHouse{
+            ID:              wh.ID.String(),
+            UserID:          wh.UserID,
+            ContactPerson:   wh.ContactPerson,
+            ContactNumber:   wh.ContactNumber,
+            EmailAddress:    wh.EmailAddress,
+            CompleteAddress: wh.CompleteAddress,
+            Landmark:        &landmark,
+            Pincode:        wh.Pincode,
+            City:           wh.City,
+            State:          wh.State,
+            Country:        wh.Country,
+            // CreatedAt:      wh.CreatedAt,
+            // UpdatedAt:      wh.UpdatedAt,
+        }
+    }
+    return result, nil
+}
+
+
 // Orders fetch orders for all shopnames for the given account with pagination
 func (r *accountResolver) Orders(ctx context.Context, obj *models.Account) ([]*models.Order, error) {
     // Use the shopify client to get orders for this account
