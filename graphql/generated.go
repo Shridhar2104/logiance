@@ -58,6 +58,7 @@ type ComplexityRoot struct {
 		Orders      func(childComplexity int) int
 		Password    func(childComplexity int) int
 		ShopNames   func(childComplexity int) int
+		Warehouses  func(childComplexity int) int
 	}
 
 	AccountShipmentsResponse struct {
@@ -118,11 +119,13 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddBankAccount         func(childComplexity int, userID string, bankAccount BankAccountInput) int
+		AddWareHouse           func(childComplexity int, userID string, warehouse WareHouseInput) int
 		CalculateShippingRates func(childComplexity int, input ShippingRateInput) int
 		CreateAccount          func(childComplexity int, account AccountInput) int
 		CreateShipment         func(childComplexity int, input CreateShipmentInput) int
 		DeductBalance          func(childComplexity int, input DeductBalanceInput) int
 		DeleteBankAccount      func(childComplexity int, userID string) int
+		DeleteWareHouse        func(childComplexity int, id string) int
 		ExchangeAccessToken    func(childComplexity int, shopName string, code string, accountID string) int
 		GetAvailableCouriers   func(childComplexity int, input AvailabilityInput) int
 		IntegrateShop          func(childComplexity int, shopName string) int
@@ -130,6 +133,7 @@ type ComplexityRoot struct {
 		SyncOrders             func(childComplexity int, accountID string) int
 		TrackShipment          func(childComplexity int, input TrackingInput) int
 		UpdateBankAccount      func(childComplexity int, userID string, bankAccount BankAccountInput) int
+		UpdateWareHouse        func(childComplexity int, id string, warehouse WareHouseInput) int
 	}
 
 	Order struct {
@@ -192,6 +196,8 @@ type ComplexityRoot struct {
 		GetOrdersForAccount func(childComplexity int, accountID string, pagination *OrderPaginationInput) int
 		GetShipmentByOrder  func(childComplexity int, orderID string) int
 		GetWalletDetails    func(childComplexity int, input GetWalletDetailsInput) int
+		GetWareHouseByID    func(childComplexity int, id string) int
+		GetWareHouses       func(childComplexity int, userID string) int
 		Ping                func(childComplexity int) int
 	}
 
@@ -269,12 +275,29 @@ type ComplexityRoot struct {
 		Errors     func(childComplexity int) int
 		NewBalance func(childComplexity int) int
 	}
+
+	WareHouse struct {
+		City            func(childComplexity int) int
+		CompleteAddress func(childComplexity int) int
+		ContactNumber   func(childComplexity int) int
+		ContactPerson   func(childComplexity int) int
+		Country         func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		EmailAddress    func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Landmark        func(childComplexity int) int
+		Pincode         func(childComplexity int) int
+		State           func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+		UserID          func(childComplexity int) int
+	}
 }
 
 type AccountResolver interface {
 	Orders(ctx context.Context, obj *models.Account) ([]*models.Order, error)
 
 	BankAccount(ctx context.Context, obj *models.Account) (*BankAccount, error)
+	Warehouses(ctx context.Context, obj *models.Account) ([]*WareHouse, error)
 }
 type CourierInfoResolver interface {
 	Code(ctx context.Context, obj *models.CourierInfo) (string, error)
@@ -294,6 +317,9 @@ type MutationResolver interface {
 	AddBankAccount(ctx context.Context, userID string, bankAccount BankAccountInput) (*BankAccount, error)
 	UpdateBankAccount(ctx context.Context, userID string, bankAccount BankAccountInput) (*BankAccount, error)
 	DeleteBankAccount(ctx context.Context, userID string) (bool, error)
+	AddWareHouse(ctx context.Context, userID string, warehouse WareHouseInput) (*WareHouse, error)
+	UpdateWareHouse(ctx context.Context, id string, warehouse WareHouseInput) (*WareHouse, error)
+	DeleteWareHouse(ctx context.Context, id string) (bool, error)
 }
 type OrderResolver interface {
 	CreatedAt(ctx context.Context, obj *models.Order) (string, error)
@@ -314,6 +340,8 @@ type QueryResolver interface {
 	GetShipmentByOrder(ctx context.Context, orderID string) (*ShipmentResponse, error)
 	GetAccountShipments(ctx context.Context, input AccountShipmentsInput) (*AccountShipmentsResponse, error)
 	Ping(ctx context.Context) (string, error)
+	GetWareHouses(ctx context.Context, userID string) ([]*WareHouse, error)
+	GetWareHouseByID(ctx context.Context, id string) (*WareHouse, error)
 }
 
 type executableSchema struct {
@@ -383,6 +411,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Account.ShopNames(childComplexity), true
+
+	case "Account.warehouses":
+		if e.complexity.Account.Warehouses == nil {
+			break
+		}
+
+		return e.complexity.Account.Warehouses(childComplexity), true
 
 	case "AccountShipmentsResponse.error":
 		if e.complexity.AccountShipmentsResponse.Error == nil {
@@ -625,6 +660,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddBankAccount(childComplexity, args["userId"].(string), args["bankAccount"].(BankAccountInput)), true
 
+	case "Mutation.addWareHouse":
+		if e.complexity.Mutation.AddWareHouse == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addWareHouse_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddWareHouse(childComplexity, args["userId"].(string), args["warehouse"].(WareHouseInput)), true
+
 	case "Mutation.calculateShippingRates":
 		if e.complexity.Mutation.CalculateShippingRates == nil {
 			break
@@ -684,6 +731,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteBankAccount(childComplexity, args["userId"].(string)), true
+
+	case "Mutation.deleteWareHouse":
+		if e.complexity.Mutation.DeleteWareHouse == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteWareHouse_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteWareHouse(childComplexity, args["id"].(string)), true
 
 	case "Mutation.exchangeAccessToken":
 		if e.complexity.Mutation.ExchangeAccessToken == nil {
@@ -768,6 +827,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateBankAccount(childComplexity, args["userId"].(string), args["bankAccount"].(BankAccountInput)), true
+
+	case "Mutation.updateWareHouse":
+		if e.complexity.Mutation.UpdateWareHouse == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateWareHouse_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateWareHouse(childComplexity, args["id"].(string), args["warehouse"].(WareHouseInput)), true
 
 	case "Order.accountId":
 		if e.complexity.Order.AccountId == nil {
@@ -1117,6 +1188,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetWalletDetails(childComplexity, args["input"].(GetWalletDetailsInput)), true
 
+	case "Query.getWareHouseById":
+		if e.complexity.Query.GetWareHouseByID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getWareHouseById_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetWareHouseByID(childComplexity, args["id"].(string)), true
+
+	case "Query.getWareHouses":
+		if e.complexity.Query.GetWareHouses == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getWareHouses_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetWareHouses(childComplexity, args["userId"].(string)), true
+
 	case "Query.ping":
 		if e.complexity.Query.Ping == nil {
 			break
@@ -1397,6 +1492,97 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.WalletOperationResponse.NewBalance(childComplexity), true
 
+	case "WareHouse.city":
+		if e.complexity.WareHouse.City == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.City(childComplexity), true
+
+	case "WareHouse.completeAddress":
+		if e.complexity.WareHouse.CompleteAddress == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.CompleteAddress(childComplexity), true
+
+	case "WareHouse.contactNumber":
+		if e.complexity.WareHouse.ContactNumber == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.ContactNumber(childComplexity), true
+
+	case "WareHouse.contactPerson":
+		if e.complexity.WareHouse.ContactPerson == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.ContactPerson(childComplexity), true
+
+	case "WareHouse.country":
+		if e.complexity.WareHouse.Country == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.Country(childComplexity), true
+
+	case "WareHouse.createdAt":
+		if e.complexity.WareHouse.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.CreatedAt(childComplexity), true
+
+	case "WareHouse.emailAddress":
+		if e.complexity.WareHouse.EmailAddress == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.EmailAddress(childComplexity), true
+
+	case "WareHouse.id":
+		if e.complexity.WareHouse.ID == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.ID(childComplexity), true
+
+	case "WareHouse.landmark":
+		if e.complexity.WareHouse.Landmark == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.Landmark(childComplexity), true
+
+	case "WareHouse.pincode":
+		if e.complexity.WareHouse.Pincode == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.Pincode(childComplexity), true
+
+	case "WareHouse.state":
+		if e.complexity.WareHouse.State == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.State(childComplexity), true
+
+	case "WareHouse.updatedAt":
+		if e.complexity.WareHouse.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.UpdatedAt(childComplexity), true
+
+	case "WareHouse.userId":
+		if e.complexity.WareHouse.UserID == nil {
+			break
+		}
+
+		return e.complexity.WareHouse.UserID(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1424,6 +1610,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputReturnInfoInput,
 		ec.unmarshalInputShippingRateInput,
 		ec.unmarshalInputTrackingInput,
+		ec.unmarshalInputWareHouseInput,
 	)
 	first := true
 
@@ -1631,6 +1818,65 @@ func (ec *executionContext) field_Mutation_addBankAccount_argsBankAccount(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_addWareHouse_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_addWareHouse_argsUserID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["userId"] = arg0
+	arg1, err := ec.field_Mutation_addWareHouse_argsWarehouse(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["warehouse"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_addWareHouse_argsUserID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["userId"]
+	if !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+	if tmp, ok := rawArgs["userId"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_addWareHouse_argsWarehouse(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (WareHouseInput, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["warehouse"]
+	if !ok {
+		var zeroVal WareHouseInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("warehouse"))
+	if tmp, ok := rawArgs["warehouse"]; ok {
+		return ec.unmarshalNWareHouseInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouseInput(ctx, tmp)
+	}
+
+	var zeroVal WareHouseInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_calculateShippingRates_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1784,6 +2030,38 @@ func (ec *executionContext) field_Mutation_deleteBankAccount_argsUserID(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
 	if tmp, ok := rawArgs["userId"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteWareHouse_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteWareHouse_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteWareHouse_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["id"]
+	if !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -2093,6 +2371,65 @@ func (ec *executionContext) field_Mutation_updateBankAccount_argsBankAccount(
 	}
 
 	var zeroVal BankAccountInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateWareHouse_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateWareHouse_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := ec.field_Mutation_updateWareHouse_argsWarehouse(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["warehouse"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateWareHouse_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["id"]
+	if !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateWareHouse_argsWarehouse(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (WareHouseInput, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["warehouse"]
+	if !ok {
+		var zeroVal WareHouseInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("warehouse"))
+	if tmp, ok := rawArgs["warehouse"]; ok {
+		return ec.unmarshalNWareHouseInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouseInput(ctx, tmp)
+	}
+
+	var zeroVal WareHouseInput
 	return zeroVal, nil
 }
 
@@ -2435,6 +2772,70 @@ func (ec *executionContext) field_Query_getWalletDetails_argsInput(
 	}
 
 	var zeroVal GetWalletDetailsInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getWareHouseById_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getWareHouseById_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_getWareHouseById_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["id"]
+	if !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getWareHouses_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getWareHouses_argsUserID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["userId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_getWareHouses_argsUserID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["userId"]
+	if !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+	if tmp, ok := rawArgs["userId"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -2876,6 +3277,78 @@ func (ec *executionContext) fieldContext_Account_bankAccount(_ context.Context, 
 				return ec.fieldContext_BankAccount_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BankAccount", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Account_warehouses(ctx context.Context, field graphql.CollectedField, obj *models.Account) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Account_warehouses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Account().Warehouses(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*WareHouse)
+	fc.Result = res
+	return ec.marshalNWareHouse2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouseᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Account_warehouses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Account",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WareHouse_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_WareHouse_userId(ctx, field)
+			case "contactPerson":
+				return ec.fieldContext_WareHouse_contactPerson(ctx, field)
+			case "contactNumber":
+				return ec.fieldContext_WareHouse_contactNumber(ctx, field)
+			case "emailAddress":
+				return ec.fieldContext_WareHouse_emailAddress(ctx, field)
+			case "completeAddress":
+				return ec.fieldContext_WareHouse_completeAddress(ctx, field)
+			case "landmark":
+				return ec.fieldContext_WareHouse_landmark(ctx, field)
+			case "pincode":
+				return ec.fieldContext_WareHouse_pincode(ctx, field)
+			case "city":
+				return ec.fieldContext_WareHouse_city(ctx, field)
+			case "state":
+				return ec.fieldContext_WareHouse_state(ctx, field)
+			case "country":
+				return ec.fieldContext_WareHouse_country(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_WareHouse_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_WareHouse_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WareHouse", field.Name)
 		},
 	}
 	return fc, nil
@@ -4391,6 +4864,8 @@ func (ec *executionContext) fieldContext_Mutation_createAccount(ctx context.Cont
 				return ec.fieldContext_Account_shopnames(ctx, field)
 			case "bankAccount":
 				return ec.fieldContext_Account_bankAccount(ctx, field)
+			case "warehouses":
+				return ec.fieldContext_Account_warehouses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Account", field.Name)
 		},
@@ -5151,6 +5626,227 @@ func (ec *executionContext) fieldContext_Mutation_deleteBankAccount(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteBankAccount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_addWareHouse(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_addWareHouse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddWareHouse(rctx, fc.Args["userId"].(string), fc.Args["warehouse"].(WareHouseInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*WareHouse)
+	fc.Result = res
+	return ec.marshalNWareHouse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addWareHouse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WareHouse_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_WareHouse_userId(ctx, field)
+			case "contactPerson":
+				return ec.fieldContext_WareHouse_contactPerson(ctx, field)
+			case "contactNumber":
+				return ec.fieldContext_WareHouse_contactNumber(ctx, field)
+			case "emailAddress":
+				return ec.fieldContext_WareHouse_emailAddress(ctx, field)
+			case "completeAddress":
+				return ec.fieldContext_WareHouse_completeAddress(ctx, field)
+			case "landmark":
+				return ec.fieldContext_WareHouse_landmark(ctx, field)
+			case "pincode":
+				return ec.fieldContext_WareHouse_pincode(ctx, field)
+			case "city":
+				return ec.fieldContext_WareHouse_city(ctx, field)
+			case "state":
+				return ec.fieldContext_WareHouse_state(ctx, field)
+			case "country":
+				return ec.fieldContext_WareHouse_country(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_WareHouse_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_WareHouse_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WareHouse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addWareHouse_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateWareHouse(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateWareHouse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateWareHouse(rctx, fc.Args["id"].(string), fc.Args["warehouse"].(WareHouseInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*WareHouse)
+	fc.Result = res
+	return ec.marshalNWareHouse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateWareHouse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WareHouse_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_WareHouse_userId(ctx, field)
+			case "contactPerson":
+				return ec.fieldContext_WareHouse_contactPerson(ctx, field)
+			case "contactNumber":
+				return ec.fieldContext_WareHouse_contactNumber(ctx, field)
+			case "emailAddress":
+				return ec.fieldContext_WareHouse_emailAddress(ctx, field)
+			case "completeAddress":
+				return ec.fieldContext_WareHouse_completeAddress(ctx, field)
+			case "landmark":
+				return ec.fieldContext_WareHouse_landmark(ctx, field)
+			case "pincode":
+				return ec.fieldContext_WareHouse_pincode(ctx, field)
+			case "city":
+				return ec.fieldContext_WareHouse_city(ctx, field)
+			case "state":
+				return ec.fieldContext_WareHouse_state(ctx, field)
+			case "country":
+				return ec.fieldContext_WareHouse_country(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_WareHouse_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_WareHouse_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WareHouse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateWareHouse_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteWareHouse(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteWareHouse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteWareHouse(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteWareHouse(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteWareHouse_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6841,6 +7537,8 @@ func (ec *executionContext) fieldContext_Query_getAccountByID(ctx context.Contex
 				return ec.fieldContext_Account_shopnames(ctx, field)
 			case "bankAccount":
 				return ec.fieldContext_Account_bankAccount(ctx, field)
+			case "warehouses":
+				return ec.fieldContext_Account_warehouses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Account", field.Name)
 		},
@@ -6912,6 +7610,8 @@ func (ec *executionContext) fieldContext_Query_accounts(ctx context.Context, fie
 				return ec.fieldContext_Account_shopnames(ctx, field)
 			case "bankAccount":
 				return ec.fieldContext_Account_bankAccount(ctx, field)
+			case "warehouses":
+				return ec.fieldContext_Account_warehouses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Account", field.Name)
 		},
@@ -7390,6 +8090,169 @@ func (ec *executionContext) fieldContext_Query_ping(_ context.Context, field gra
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getWareHouses(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getWareHouses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetWareHouses(rctx, fc.Args["userId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*WareHouse)
+	fc.Result = res
+	return ec.marshalNWareHouse2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouseᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getWareHouses(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WareHouse_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_WareHouse_userId(ctx, field)
+			case "contactPerson":
+				return ec.fieldContext_WareHouse_contactPerson(ctx, field)
+			case "contactNumber":
+				return ec.fieldContext_WareHouse_contactNumber(ctx, field)
+			case "emailAddress":
+				return ec.fieldContext_WareHouse_emailAddress(ctx, field)
+			case "completeAddress":
+				return ec.fieldContext_WareHouse_completeAddress(ctx, field)
+			case "landmark":
+				return ec.fieldContext_WareHouse_landmark(ctx, field)
+			case "pincode":
+				return ec.fieldContext_WareHouse_pincode(ctx, field)
+			case "city":
+				return ec.fieldContext_WareHouse_city(ctx, field)
+			case "state":
+				return ec.fieldContext_WareHouse_state(ctx, field)
+			case "country":
+				return ec.fieldContext_WareHouse_country(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_WareHouse_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_WareHouse_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WareHouse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getWareHouses_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getWareHouseById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getWareHouseById(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetWareHouseByID(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*WareHouse)
+	fc.Result = res
+	return ec.marshalOWareHouse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getWareHouseById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_WareHouse_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_WareHouse_userId(ctx, field)
+			case "contactPerson":
+				return ec.fieldContext_WareHouse_contactPerson(ctx, field)
+			case "contactNumber":
+				return ec.fieldContext_WareHouse_contactNumber(ctx, field)
+			case "emailAddress":
+				return ec.fieldContext_WareHouse_emailAddress(ctx, field)
+			case "completeAddress":
+				return ec.fieldContext_WareHouse_completeAddress(ctx, field)
+			case "landmark":
+				return ec.fieldContext_WareHouse_landmark(ctx, field)
+			case "pincode":
+				return ec.fieldContext_WareHouse_pincode(ctx, field)
+			case "city":
+				return ec.fieldContext_WareHouse_city(ctx, field)
+			case "state":
+				return ec.fieldContext_WareHouse_state(ctx, field)
+			case "country":
+				return ec.fieldContext_WareHouse_country(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_WareHouse_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_WareHouse_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WareHouse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getWareHouseById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -9246,6 +10109,575 @@ func (ec *executionContext) fieldContext_WalletOperationResponse_errors(_ contex
 				return ec.fieldContext_Error_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Error", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_id(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_userId(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_contactPerson(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_contactPerson(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContactPerson, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_contactPerson(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_contactNumber(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_contactNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContactNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_contactNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_emailAddress(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_emailAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmailAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_emailAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_completeAddress(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_completeAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CompleteAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_completeAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_landmark(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_landmark(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Landmark, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_landmark(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_pincode(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_pincode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pincode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_pincode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_city(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_city(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.City, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_city(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_state(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_state(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_country(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_country(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_country(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_createdAt(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNDateTime2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DateTime does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WareHouse_updatedAt(ctx context.Context, field graphql.CollectedField, obj *WareHouse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WareHouse_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNDateTime2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WareHouse_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WareHouse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DateTime does not have child fields")
 		},
 	}
 	return fc, nil
@@ -12027,6 +13459,89 @@ func (ec *executionContext) unmarshalInputTrackingInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputWareHouseInput(ctx context.Context, obj any) (WareHouseInput, error) {
+	var it WareHouseInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"contactPerson", "contactNumber", "emailAddress", "completeAddress", "landmark", "pincode", "city", "state", "country"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "contactPerson":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contactPerson"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContactPerson = data
+		case "contactNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contactNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContactNumber = data
+		case "emailAddress":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emailAddress"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EmailAddress = data
+		case "completeAddress":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("completeAddress"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CompleteAddress = data
+		case "landmark":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("landmark"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Landmark = data
+		case "pincode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pincode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Pincode = data
+		case "city":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("city"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.City = data
+		case "state":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.State = data
+		case "country":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("country"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Country = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -12117,6 +13632,42 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Account_bankAccount(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "warehouses":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_warehouses(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -12733,6 +14284,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteBankAccount":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteBankAccount(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "addWareHouse":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addWareHouse(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateWareHouse":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateWareHouse(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteWareHouse":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteWareHouse(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -13468,6 +15040,47 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getWareHouses":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getWareHouses(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getWareHouseById":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getWareHouseById(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -14025,6 +15638,102 @@ func (ec *executionContext) _WalletOperationResponse(ctx context.Context, sel as
 			}
 		case "errors":
 			out.Values[i] = ec._WalletOperationResponse_errors(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var wareHouseImplementors = []string{"WareHouse"}
+
+func (ec *executionContext) _WareHouse(ctx context.Context, sel ast.SelectionSet, obj *WareHouse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, wareHouseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WareHouse")
+		case "id":
+			out.Values[i] = ec._WareHouse_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._WareHouse_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "contactPerson":
+			out.Values[i] = ec._WareHouse_contactPerson(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "contactNumber":
+			out.Values[i] = ec._WareHouse_contactNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "emailAddress":
+			out.Values[i] = ec._WareHouse_emailAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "completeAddress":
+			out.Values[i] = ec._WareHouse_completeAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "landmark":
+			out.Values[i] = ec._WareHouse_landmark(ctx, field, obj)
+		case "pincode":
+			out.Values[i] = ec._WareHouse_pincode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "city":
+			out.Values[i] = ec._WareHouse_city(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._WareHouse_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "country":
+			out.Values[i] = ec._WareHouse_country(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._WareHouse_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._WareHouse_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15140,6 +16849,69 @@ func (ec *executionContext) marshalNWalletOperationResponse2ᚖgithubᚗcomᚋSh
 	return ec._WalletOperationResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNWareHouse2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx context.Context, sel ast.SelectionSet, v WareHouse) graphql.Marshaler {
+	return ec._WareHouse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWareHouse2ᚕᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouseᚄ(ctx context.Context, sel ast.SelectionSet, v []*WareHouse) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWareHouse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNWareHouse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx context.Context, sel ast.SelectionSet, v *WareHouse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._WareHouse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNWareHouseInput2githubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouseInput(ctx context.Context, v any) (WareHouseInput, error) {
+	res, err := ec.unmarshalInputWareHouseInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -15856,6 +17628,13 @@ func (ec *executionContext) marshalOWalletStatus2ᚖgithubᚗcomᚋShridhar2104�
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOWareHouse2ᚖgithubᚗcomᚋShridhar2104ᚋlogiloᚋgraphqlᚐWareHouse(ctx context.Context, sel ast.SelectionSet, v *WareHouse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._WareHouse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

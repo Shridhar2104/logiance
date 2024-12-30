@@ -13,24 +13,68 @@ type queryResolver struct {
 }
 
 func (r *queryResolver) GetAccountByID(ctx context.Context, email string, password string) (*models.Account, error) {
-   accountResp, err := r.server.accountClient.LoginAndGetAccount(ctx, email, password)
-   if err != nil {
-       return nil, err
-   }
+    accountResp, err := r.server.accountClient.LoginAndGetAccount(ctx, email, password)
+    if err != nil {
+        return nil, err
+    }
 
-//    // Fetch bank account details
-//    bankAccount, err := r.server.accountClient.GetBankAccount(ctx, accountResp.ID.String())
-//    if err != nil {
-//        bankAccount = nil // Don't return error if bank account not found
-//    }
+    // Fetch bank account details
+    bankAccount, err := r.server.accountClient.GetBankAccount(ctx, accountResp.ID.String())
+    if err != nil {
+        bankAccount = nil // Don't return error if bank account not found
+    }
 
-   return &models.Account{
-       ID:          accountResp.ID.String(),
-       Name:        accountResp.Name,
-       Password:    accountResp.Password,
-       Email:       accountResp.Email,
-    //    BankAccount: bankAccount,
-   }, nil
+    // Fetch warehouses
+    warehouses, err := r.server.accountClient.GetAddresses(ctx, accountResp.ID.String())
+    if err != nil {
+        warehouses = nil // Don't return error if warehouses not found
+    }
+
+    // Convert warehouses to proper type
+    var warehousesList []*models.WareHouse
+    if warehouses != nil {
+        warehousesList = make([]*models.WareHouse, len(warehouses))
+        for i, wh := range warehouses {
+            landmark := wh.Landmark
+            warehousesList[i] = &models.WareHouse{
+                ID:              wh.ID.String(),
+                UserID:          wh.UserID,
+                ContactPerson:   wh.ContactPerson,
+                ContactNumber:   wh.ContactNumber,
+                EmailAddress:    wh.EmailAddress,
+                CompleteAddress: wh.CompleteAddress,
+                Landmark:        &landmark,
+                Pincode:        wh.Pincode,
+                City:           wh.City,
+                State:          wh.State,
+                Country:        wh.Country,
+                // CreatedAt:      wh.CreatedAt,
+                // UpdatedAt:      wh.UpdatedAt,
+            }
+        }
+    }
+
+    var bankAccountModel *models.BankAccount
+    if bankAccount != nil {
+        bankAccountModel = &models.BankAccount{
+            UserID:          bankAccount.UserID,
+            AccountNumber:   bankAccount.AccountNumber,
+            BeneficiaryName: bankAccount.BeneficiaryName,
+            IfscCode:        bankAccount.IFSCCode,
+            BankName:        bankAccount.BankName,
+            // CreatedAt:       bankAccount.CreatedAt,
+            // UpdatedAt:       bankAccount.UpdatedAt,
+        }
+    }
+
+    return &models.Account{
+        ID:          accountResp.ID.String(),
+        Name:        accountResp.Name,
+        Password:    accountResp.Password,
+        Email:       accountResp.Email,
+        BankAccount: bankAccountModel,
+        WareHouses:  warehousesList,
+    }, nil
 }
 
 func (r *queryResolver) Accounts(ctx context.Context, pagination PaginationInput) ([]*models.Account, error) {
@@ -241,4 +285,58 @@ func (r *queryResolver) GetBankAccount(ctx context.Context, userID string) (*Ban
     //    CreatedAt:       bankAccount.CreatedAt,
     //    UpdatedAt:       bankAccount.UpdatedAt,
    }, nil
+}
+
+
+func (r *queryResolver) GetWareHouses(ctx context.Context, userID string) ([]*WareHouse, error) {
+    warehouses, err := r.server.accountClient.GetAddresses(ctx, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get warehouses: %w", err)
+    }
+
+    result := make([]*WareHouse, len(warehouses))
+    for i, wh := range warehouses {
+        landmark := wh.Landmark
+        result[i] = &WareHouse{
+            ID:              wh.ID.String(),
+            UserID:          wh.UserID,
+            ContactPerson:   wh.ContactPerson,
+            ContactNumber:   wh.ContactNumber,
+            EmailAddress:    wh.EmailAddress,
+            CompleteAddress: wh.CompleteAddress,
+            Landmark:        &landmark,
+            Pincode:        wh.Pincode,
+            City:           wh.City,
+            State:          wh.State,
+            Country:        wh.Country,
+            // CreatedAt:      wh.CreatedAt,
+            // UpdatedAt:      wh.UpdatedAt,
+        }
+    }
+
+    return result, nil
+}
+
+func (r *queryResolver) GetWareHouseByID(ctx context.Context, id string) (*WareHouse, error) {
+    warehouse, err := r.server.accountClient.GetAddressByID(ctx, id)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get warehouse: %w", err)
+    }
+
+    landmark := warehouse.Landmark
+    return &WareHouse{
+        ID:              warehouse.ID.String(),
+        UserID:          warehouse.UserID,
+        ContactPerson:   warehouse.ContactPerson,
+        ContactNumber:   warehouse.ContactNumber,
+        EmailAddress:    warehouse.EmailAddress,
+        CompleteAddress: warehouse.CompleteAddress,
+        Landmark:        &landmark,
+        Pincode:        warehouse.Pincode,
+        City:           warehouse.City,
+        State:          warehouse.State,
+        Country:        warehouse.Country,
+        // CreatedAt:      warehouse.CreatedAt,
+        // UpdatedAt:      warehouse.UpdatedAt,
+    }, nil
 }

@@ -4,22 +4,52 @@ import "time"
 
 // Add BankAccount model
 type BankAccount struct {
-    UserID          string    `json:"userId"`
-    AccountNumber   string    `json:"accountNumber"`
-    BeneficiaryName string    `json:"beneficiaryName"`
-    IFSCCode        string    `json:"ifscCode"`
-    BankName        string    `json:"bankName"`
-    CreatedAt       time.Time `json:"createdAt"`
-    UpdatedAt       time.Time `json:"updatedAt"`
+	UserID          string `json:"userId"`
+	AccountNumber   string `json:"accountNumber"`
+	BeneficiaryName string `json:"beneficiaryName"`
+	IfscCode        string `json:"ifscCode"`
+	BankName        string `json:"bankName"`
+	CreatedAt       string `json:"createdAt"`
+	UpdatedAt       string `json:"updatedAt"`
 }
+
 
 // Add BankAccountInput model
 type BankAccountInput struct {
-    AccountNumber   string `json:"accountNumber"`
-    BeneficiaryName string `json:"beneficiaryName"`
-    IFSCCode        string `json:"ifscCode"`
-    BankName        string `json:"bankName"`
+	AccountNumber   string `json:"accountNumber"`
+	BeneficiaryName string `json:"beneficiaryName"`
+	IfscCode        string `json:"ifscCode"`
+	BankName        string `json:"bankName"`
 }
+// WareHouse
+type WareHouse struct {
+	ID              string  `json:"id"`
+	UserID          string  `json:"userId"`
+	ContactPerson   string  `json:"contactPerson"`
+	ContactNumber   string  `json:"contactNumber"`
+	EmailAddress    string  `json:"emailAddress"`
+	CompleteAddress string  `json:"completeAddress"`
+	Landmark        *string `json:"landmark,omitempty"`
+	Pincode         string  `json:"pincode"`
+	City            string  `json:"city"`
+	State           string  `json:"state"`
+	Country         string  `json:"country"`
+	CreatedAt       string  `json:"createdAt"`
+	UpdatedAt       string  `json:"updatedAt"`
+}
+
+type WareHouseInput struct {
+	ContactPerson   string  `json:"contactPerson"`
+	ContactNumber   string  `json:"contactNumber"`
+	EmailAddress    string  `json:"emailAddress"`
+	CompleteAddress string  `json:"completeAddress"`
+	Landmark        *string `json:"landmark,omitempty"`
+	Pincode         string  `json:"pincode"`
+	City            string  `json:"city"`
+	State           string  `json:"state"`
+	Country         string  `json:"country"`
+}
+
 
 // Update Account model to include BankAccount
 type Account struct {
@@ -30,6 +60,7 @@ type Account struct {
     Orders     []Order     `json:"orders"`
     ShopNames  []ShopName  `json:"shopnames"`
     BankAccount *BankAccount `json:"bankAccount,omitempty"`
+    WareHouses  []*WareHouse  `json:"warehouses"`
 }
 
 
