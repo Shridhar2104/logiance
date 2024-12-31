@@ -140,8 +140,8 @@ func (r *postgresRepository) ListAccounts(ctx context.Context, skip uint64, take
 // AddBankAccount adds a new bank account for a user
 func (r *postgresRepository) AddBankAccount(ctx context.Context, bankAccount BankAccount) error {
     query := `
-        INSERT INTO bank_accounts (user_id, account_number, beneficiary_name, ifsc_code, bank_name, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO bank_accounts (user_id, account_number,account_type, branch_name, beneficiary_name, ifsc_code, bank_name, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `
     
     _, err := r.db.ExecContext(
@@ -149,6 +149,8 @@ func (r *postgresRepository) AddBankAccount(ctx context.Context, bankAccount Ban
         query,
         bankAccount.UserID,
         bankAccount.AccountNumber,
+        bankAccount.AccountType,
+        bankAccount.BranchName,
         bankAccount.BeneficiaryName,
         bankAccount.IFSCCode,
         bankAccount.BankName,
@@ -165,7 +167,7 @@ func (r *postgresRepository) AddBankAccount(ctx context.Context, bankAccount Ban
 // GetBankAccount retrieves bank account details for a user
 func (r *postgresRepository) GetBankAccount(ctx context.Context, userID string) (*BankAccount, error) {
     query := `
-        SELECT user_id, account_number, beneficiary_name, ifsc_code, bank_name, created_at, updated_at
+        SELECT user_id, account_number, account_type, branch_name, beneficiary_name, ifsc_code, bank_name, created_at, updated_at
         FROM bank_accounts
         WHERE user_id = $1
     `
@@ -174,6 +176,8 @@ func (r *postgresRepository) GetBankAccount(ctx context.Context, userID string) 
     err := r.db.QueryRowContext(ctx, query, userID).Scan(
         &bankAccount.UserID,
         &bankAccount.AccountNumber,
+        &bankAccount.AccountType,
+        &bankAccount.BranchName,
         &bankAccount.BeneficiaryName,
         &bankAccount.IFSCCode,
         &bankAccount.BankName,
@@ -196,10 +200,12 @@ func (r *postgresRepository) UpdateBankAccount(ctx context.Context, bankAccount 
     query := `
         UPDATE bank_accounts
         SET account_number = $2,
-            beneficiary_name = $3,
-            ifsc_code = $4,
-            bank_name = $5,
-            updated_at = $6
+            account_type = $3,
+            branch_name = $4,
+            beneficiary_name = $5,
+            ifsc_code = $6,
+            bank_name = $7,
+            updated_at = $8
         WHERE user_id = $1
     `
     
@@ -208,6 +214,8 @@ func (r *postgresRepository) UpdateBankAccount(ctx context.Context, bankAccount 
         query,
         bankAccount.UserID,
         bankAccount.AccountNumber,
+        bankAccount.AccountType,
+        bankAccount.BranchName,
         bankAccount.BeneficiaryName,
         bankAccount.IFSCCode,
         bankAccount.BankName,

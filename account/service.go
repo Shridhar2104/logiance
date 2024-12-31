@@ -13,9 +13,13 @@ type Service interface {
     LoginAccount(ctx context.Context, email string, password string) (*Account, error)
     ListAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error)
     // New bank account methods
-    AddBankAccount(ctx context.Context, userID string, accountNumber string, beneficiaryName string, ifscCode string, bankName string) (*BankAccount, error)
+    AddBankAccount(ctx context.Context, userID string, accountNumber string, 
+        accountType string, branchName string, beneficiaryName string, 
+        ifscCode string, bankName string) (*BankAccount, error)
     GetBankAccount(ctx context.Context, userID string) (*BankAccount, error)
-    UpdateBankAccount(ctx context.Context, userID string, accountNumber string, beneficiaryName string, ifscCode string, bankName string) (*BankAccount, error)
+    UpdateBankAccount(ctx context.Context, userID string, accountNumber string, 
+        accountType string, branchName string, beneficiaryName string, 
+        ifscCode string, bankName string) (*BankAccount, error)
     DeleteBankAccount(ctx context.Context, userID string) error
     // Address operations
     AddAddress(ctx context.Context, userID string, contactPerson string, contactNumber string, 
@@ -43,6 +47,8 @@ type Account struct {
 type BankAccount struct {
     UserID          string    `json:"user_id"`
     AccountNumber   string    `json:"account_number"`
+    AccountType     string    `json:"account_type"`
+    BranchName      string    `json:"branch_name"`
     BeneficiaryName string    `json:"beneficiary_name"`
     IFSCCode        string    `json:"ifsc_code"`
     BankName        string    `json:"bank_name"`
@@ -80,6 +86,8 @@ func (s *accountService) AddBankAccount(
     ctx context.Context,
     userID string,
     accountNumber string,
+    accountType string,
+    branchName string,
     beneficiaryName string,
     ifscCode string,
     bankName string,
@@ -87,6 +95,8 @@ func (s *accountService) AddBankAccount(
     bankAccount := &BankAccount{
         UserID:          userID,
         AccountNumber:   accountNumber,
+        AccountType:     accountType,
+        BranchName:      branchName,
         BeneficiaryName: beneficiaryName,
         IFSCCode:        ifscCode,
         BankName:        bankName,
@@ -110,6 +120,8 @@ func (s *accountService) UpdateBankAccount(
     ctx context.Context,
     userID string,
     accountNumber string,
+    accountType string,
+    branchName string,
     beneficiaryName string,
     ifscCode string,
     bankName string,
@@ -117,6 +129,8 @@ func (s *accountService) UpdateBankAccount(
     bankAccount := &BankAccount{
         UserID:          userID,
         AccountNumber:   accountNumber,
+        AccountType:     accountType,
+        BranchName:      branchName,
         BeneficiaryName: beneficiaryName,
         IFSCCode:        ifscCode,
         BankName:        bankName,
