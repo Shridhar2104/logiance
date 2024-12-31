@@ -45,6 +45,8 @@ type Account {
 type BankAccount {
    userId: String!
    accountNumber: String!
+   accountType: String!      # New field
+   branchName: String!       # New field
    beneficiaryName: String!
    ifscCode: String!
    bankName: String!
@@ -230,6 +232,8 @@ input AccountInput {
 
 input BankAccountInput {
    accountNumber: String!
+   accountType: String!      # New field
+   branchName: String!       # New field
    beneficiaryName: String!
    ifscCode: String!
    bankName: String!

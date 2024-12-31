@@ -73,8 +73,10 @@ type ComplexityRoot struct {
 
 	BankAccount struct {
 		AccountNumber   func(childComplexity int) int
+		AccountType     func(childComplexity int) int
 		BankName        func(childComplexity int) int
 		BeneficiaryName func(childComplexity int) int
+		BranchName      func(childComplexity int) int
 		CreatedAt       func(childComplexity int) int
 		IfscCode        func(childComplexity int) int
 		UpdatedAt       func(childComplexity int) int
@@ -459,6 +461,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BankAccount.AccountNumber(childComplexity), true
 
+	case "BankAccount.accountType":
+		if e.complexity.BankAccount.AccountType == nil {
+			break
+		}
+
+		return e.complexity.BankAccount.AccountType(childComplexity), true
+
 	case "BankAccount.bankName":
 		if e.complexity.BankAccount.BankName == nil {
 			break
@@ -472,6 +481,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BankAccount.BeneficiaryName(childComplexity), true
+
+	case "BankAccount.branchName":
+		if e.complexity.BankAccount.BranchName == nil {
+			break
+		}
+
+		return e.complexity.BankAccount.BranchName(childComplexity), true
 
 	case "BankAccount.createdAt":
 		if e.complexity.BankAccount.CreatedAt == nil {
@@ -3265,6 +3281,10 @@ func (ec *executionContext) fieldContext_Account_bankAccount(_ context.Context, 
 				return ec.fieldContext_BankAccount_userId(ctx, field)
 			case "accountNumber":
 				return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+			case "accountType":
+				return ec.fieldContext_BankAccount_accountType(ctx, field)
+			case "branchName":
+				return ec.fieldContext_BankAccount_branchName(ctx, field)
 			case "beneficiaryName":
 				return ec.fieldContext_BankAccount_beneficiaryName(ctx, field)
 			case "ifscCode":
@@ -3671,6 +3691,94 @@ func (ec *executionContext) _BankAccount_accountNumber(ctx context.Context, fiel
 }
 
 func (ec *executionContext) fieldContext_BankAccount_accountNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BankAccount",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BankAccount_accountType(ctx context.Context, field graphql.CollectedField, obj *BankAccount) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BankAccount_accountType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccountType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BankAccount_accountType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BankAccount",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BankAccount_branchName(ctx context.Context, field graphql.CollectedField, obj *BankAccount) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BankAccount_branchName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BranchName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BankAccount_branchName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "BankAccount",
 		Field:      field,
@@ -5478,6 +5586,10 @@ func (ec *executionContext) fieldContext_Mutation_addBankAccount(ctx context.Con
 				return ec.fieldContext_BankAccount_userId(ctx, field)
 			case "accountNumber":
 				return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+			case "accountType":
+				return ec.fieldContext_BankAccount_accountType(ctx, field)
+			case "branchName":
+				return ec.fieldContext_BankAccount_branchName(ctx, field)
 			case "beneficiaryName":
 				return ec.fieldContext_BankAccount_beneficiaryName(ctx, field)
 			case "ifscCode":
@@ -5549,6 +5661,10 @@ func (ec *executionContext) fieldContext_Mutation_updateBankAccount(ctx context.
 				return ec.fieldContext_BankAccount_userId(ctx, field)
 			case "accountNumber":
 				return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+			case "accountType":
+				return ec.fieldContext_BankAccount_accountType(ctx, field)
+			case "branchName":
+				return ec.fieldContext_BankAccount_branchName(ctx, field)
 			case "beneficiaryName":
 				return ec.fieldContext_BankAccount_beneficiaryName(ctx, field)
 			case "ifscCode":
@@ -7831,6 +7947,10 @@ func (ec *executionContext) fieldContext_Query_getBankAccount(ctx context.Contex
 				return ec.fieldContext_BankAccount_userId(ctx, field)
 			case "accountNumber":
 				return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+			case "accountType":
+				return ec.fieldContext_BankAccount_accountType(ctx, field)
+			case "branchName":
+				return ec.fieldContext_BankAccount_branchName(ctx, field)
 			case "beneficiaryName":
 				return ec.fieldContext_BankAccount_beneficiaryName(ctx, field)
 			case "ifscCode":
@@ -12697,7 +12817,7 @@ func (ec *executionContext) unmarshalInputBankAccountInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"accountNumber", "beneficiaryName", "ifscCode", "bankName"}
+	fieldsInOrder := [...]string{"accountNumber", "accountType", "branchName", "beneficiaryName", "ifscCode", "bankName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12711,6 +12831,20 @@ func (ec *executionContext) unmarshalInputBankAccountInput(ctx context.Context, 
 				return it, err
 			}
 			it.AccountNumber = data
+		case "accountType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("accountType"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AccountType = data
+		case "branchName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("branchName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BranchName = data
 		case "beneficiaryName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beneficiaryName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -13814,6 +13948,16 @@ func (ec *executionContext) _BankAccount(ctx context.Context, sel ast.SelectionS
 			}
 		case "accountNumber":
 			out.Values[i] = ec._BankAccount_accountNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "accountType":
+			out.Values[i] = ec._BankAccount_accountType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "branchName":
+			out.Values[i] = ec._BankAccount_branchName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

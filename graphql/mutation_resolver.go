@@ -159,6 +159,8 @@ func (r *mutationResolver) AddBankAccount(ctx context.Context, userID string, in
     bankAccount := &account.BankAccount{
         UserID:          userID,
         AccountNumber:   input.AccountNumber,
+        AccountType:     input.AccountType,     // New field
+        BranchName:      input.BranchName,      // New field
         BeneficiaryName: input.BeneficiaryName,
         IFSCCode:        input.IfscCode,
         BankName:        input.BankName,
@@ -172,18 +174,22 @@ func (r *mutationResolver) AddBankAccount(ctx context.Context, userID string, in
     return &BankAccount{
         UserID:          resp.UserID,
         AccountNumber:   resp.AccountNumber,
+        AccountType:     resp.AccountType,     // New field
+        BranchName:      resp.BranchName,      // New field
         BeneficiaryName: resp.BeneficiaryName,
         IfscCode:        resp.IFSCCode,
         BankName:        resp.BankName,
         // CreatedAt:       resp.CreatedAt,
         // UpdatedAt:       resp.UpdatedAt,
     }, nil
- }
+}
  
- func (r *mutationResolver) UpdateBankAccount(ctx context.Context, userID string, input BankAccountInput) (*BankAccount, error) {
+func (r *mutationResolver) UpdateBankAccount(ctx context.Context, userID string, input BankAccountInput) (*BankAccount, error) {
     bankAccount := &account.BankAccount{
         UserID:          userID,
         AccountNumber:   input.AccountNumber,
+        AccountType:     input.AccountType,     // New field
+        BranchName:      input.BranchName,      // New field
         BeneficiaryName: input.BeneficiaryName,
         IFSCCode:        input.IfscCode,
         BankName:        input.BankName,
@@ -197,13 +203,15 @@ func (r *mutationResolver) AddBankAccount(ctx context.Context, userID string, in
     return &BankAccount{
         UserID:          resp.UserID,
         AccountNumber:   resp.AccountNumber,
+        AccountType:     resp.AccountType,     // New field
+        BranchName:      resp.BranchName,      // New field
         BeneficiaryName: resp.BeneficiaryName,
         IfscCode:        resp.IFSCCode,
         BankName:        resp.BankName,
         // CreatedAt:       resp.CreatedAt,
         // UpdatedAt:       resp.UpdatedAt,
     }, nil
- }
+}
  
  func (r *mutationResolver) DeleteBankAccount(ctx context.Context, userID string) (bool, error) {
     err := r.server.accountClient.DeleteBankAccount(ctx, userID)
