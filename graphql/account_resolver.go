@@ -24,6 +24,8 @@ func (r *accountResolver) BankAccount(ctx context.Context, obj *models.Account) 
     return &BankAccount{
         UserID:          bankAccount.UserID,
         AccountNumber:   bankAccount.AccountNumber,
+        AccountType:     bankAccount.AccountType,     // New field
+        BranchName:      bankAccount.BranchName,      // New field
         BeneficiaryName: bankAccount.BeneficiaryName,
         IfscCode:        bankAccount.IFSCCode,
         BankName:        bankAccount.BankName,

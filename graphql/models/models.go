@@ -6,6 +6,8 @@ import "time"
 type BankAccount struct {
 	UserID          string `json:"userId"`
 	AccountNumber   string `json:"accountNumber"`
+    AccountType     string `json:"accountType"`     // New field
+    BranchName      string `json:"branchName"`      // New field
 	BeneficiaryName string `json:"beneficiaryName"`
 	IfscCode        string `json:"ifscCode"`
 	BankName        string `json:"bankName"`
@@ -17,6 +19,8 @@ type BankAccount struct {
 // Add BankAccountInput model
 type BankAccountInput struct {
 	AccountNumber   string `json:"accountNumber"`
+    AccountType     string `json:"accountType"`     // New field
+    BranchName      string `json:"branchName"`      // New field
 	BeneficiaryName string `json:"beneficiaryName"`
 	IfscCode        string `json:"ifscCode"`
 	BankName        string `json:"bankName"`

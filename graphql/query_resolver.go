@@ -59,6 +59,8 @@ func (r *queryResolver) GetAccountByID(ctx context.Context, email string, passwo
         bankAccountModel = &models.BankAccount{
             UserID:          bankAccount.UserID,
             AccountNumber:   bankAccount.AccountNumber,
+            AccountType:     bankAccount.AccountType,     // New field
+            BranchName:      bankAccount.BranchName,      // New field
             BeneficiaryName: bankAccount.BeneficiaryName,
             IfscCode:        bankAccount.IFSCCode,
             BankName:        bankAccount.BankName,
@@ -271,20 +273,22 @@ func (r *queryResolver) GetAccountShipments(ctx context.Context, input AccountSh
 }
 
 func (r *queryResolver) GetBankAccount(ctx context.Context, userID string) (*BankAccount, error) {
-   bankAccount, err := r.server.accountClient.GetBankAccount(ctx, userID)
-   if err != nil {
-       return nil, fmt.Errorf("failed to get bank account: %w", err)
-   }
+    bankAccount, err := r.server.accountClient.GetBankAccount(ctx, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get bank account: %w", err)
+    }
 
-   return &BankAccount{
-       UserID:          bankAccount.UserID,
-       AccountNumber:   bankAccount.AccountNumber,
-       BeneficiaryName: bankAccount.BeneficiaryName,
-       IfscCode:        bankAccount.IFSCCode,
-       BankName:        bankAccount.BankName,
-    //    CreatedAt:       bankAccount.CreatedAt,
-    //    UpdatedAt:       bankAccount.UpdatedAt,
-   }, nil
+    return &BankAccount{
+        UserID:          bankAccount.UserID,
+        AccountNumber:   bankAccount.AccountNumber,
+        AccountType:     bankAccount.AccountType,     // New field
+        BranchName:      bankAccount.BranchName,      // New field
+        BeneficiaryName: bankAccount.BeneficiaryName,
+        IfscCode:        bankAccount.IFSCCode,
+        BankName:        bankAccount.BankName,
+        // CreatedAt:       bankAccount.CreatedAt,
+        // UpdatedAt:       bankAccount.UpdatedAt,
+    }, nil
 }
 
 

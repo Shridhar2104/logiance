@@ -43,17 +43,21 @@ message ListAccountsResponse {
 message BankAccount {
     string user_id = 1;
     string account_number = 2;
-    string beneficiary_name = 3;
-    string ifsc_code = 4;
-    string bank_name = 5;
+    string account_type = 3;    // New field
+    string branch_name = 4;     // New field
+    string beneficiary_name = 5; // Moved from 3 to 5
+    string ifsc_code = 6;       // Moved from 4 to 6
+    string bank_name = 7;       // Moved from 5 to 7
 }
 
 message AddBankAccountRequest {
     string user_id = 1;
     string account_number = 2;
-    string beneficiary_name = 3;
-    string ifsc_code = 4;
-    string bank_name = 5;
+    string account_type = 3;    // New field
+    string branch_name = 4;     // New field
+    string beneficiary_name = 5; // Moved from 3 to 5
+    string ifsc_code = 6;       // Moved from 4 to 6
+    string bank_name = 7;       // Moved from 5 to 7
 }
 
 message AddBankAccountResponse {
@@ -71,9 +75,11 @@ message GetBankAccountResponse {
 message UpdateBankAccountRequest {
     string user_id = 1;
     string account_number = 2;
-    string beneficiary_name = 3;
-    string ifsc_code = 4;
-    string bank_name = 5;
+    string account_type = 3;    // New field
+    string branch_name = 4;     // New field
+    string beneficiary_name = 5; // Moved from 3 to 5
+    string ifsc_code = 6;       // Moved from 4 to 6
+    string bank_name = 7;       // Moved from 5 to 7
 }
 
 message UpdateBankAccountResponse {

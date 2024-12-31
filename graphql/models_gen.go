@@ -57,6 +57,8 @@ type AvailabilityInput struct {
 type BankAccount struct {
 	UserID          string `json:"userId"`
 	AccountNumber   string `json:"accountNumber"`
+	AccountType     string `json:"accountType"`
+	BranchName      string `json:"branchName"`
 	BeneficiaryName string `json:"beneficiaryName"`
 	IfscCode        string `json:"ifscCode"`
 	BankName        string `json:"bankName"`
@@ -66,6 +68,8 @@ type BankAccount struct {
 
 type BankAccountInput struct {
 	AccountNumber   string `json:"accountNumber"`
+	AccountType     string `json:"accountType"`
+	BranchName      string `json:"branchName"`
 	BeneficiaryName string `json:"beneficiaryName"`
 	IfscCode        string `json:"ifscCode"`
 	BankName        string `json:"bankName"`

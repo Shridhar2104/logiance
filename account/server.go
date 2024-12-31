@@ -88,6 +88,8 @@ func (s *grpcServer) AddBankAccount(ctx context.Context, r *pb.AddBankAccountReq
         ctx,
         r.UserId,
         r.AccountNumber,
+        r.AccountType,     // New field
+        r.BranchName,      // New field
         r.BeneficiaryName,
         r.IfscCode,
         r.BankName,
@@ -101,6 +103,8 @@ func (s *grpcServer) AddBankAccount(ctx context.Context, r *pb.AddBankAccountReq
         BankAccount: &pb.BankAccount{
             UserId:          bankAccount.UserID,
             AccountNumber:   bankAccount.AccountNumber,
+            AccountType:     bankAccount.AccountType,     // New field
+            BranchName:      bankAccount.BranchName,      // New field
             BeneficiaryName: bankAccount.BeneficiaryName,
             IfscCode:        bankAccount.IFSCCode,
             BankName:        bankAccount.BankName,
@@ -119,6 +123,8 @@ func (s *grpcServer) GetBankAccount(ctx context.Context, r *pb.GetBankAccountReq
         BankAccount: &pb.BankAccount{
             UserId:          bankAccount.UserID,
             AccountNumber:   bankAccount.AccountNumber,
+            AccountType:     bankAccount.AccountType,     // New field
+            BranchName:      bankAccount.BranchName,      // New field
             BeneficiaryName: bankAccount.BeneficiaryName,
             IfscCode:        bankAccount.IFSCCode,
             BankName:        bankAccount.BankName,
@@ -131,6 +137,8 @@ func (s *grpcServer) UpdateBankAccount(ctx context.Context, r *pb.UpdateBankAcco
         ctx,
         r.UserId,
         r.AccountNumber,
+        r.AccountType,     // New field
+        r.BranchName,      // New field
         r.BeneficiaryName,
         r.IfscCode,
         r.BankName,
@@ -144,6 +152,8 @@ func (s *grpcServer) UpdateBankAccount(ctx context.Context, r *pb.UpdateBankAcco
         BankAccount: &pb.BankAccount{
             UserId:          bankAccount.UserID,
             AccountNumber:   bankAccount.AccountNumber,
+            AccountType:     bankAccount.AccountType,     // New field
+            BranchName:      bankAccount.BranchName,      // New field
             BeneficiaryName: bankAccount.BeneficiaryName,
             IfscCode:        bankAccount.IFSCCode,
             BankName:        bankAccount.BankName,

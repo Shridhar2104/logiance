@@ -4,7 +4,7 @@ import (
     "context"
     "log"
     "time"
-
+    
     "github.com/Shridhar2104/logilo/account/pb"
     "github.com/google/uuid"
     "google.golang.org/grpc"
@@ -100,46 +100,48 @@ func (c *Client) ListAccounts(ctx context.Context, skip, take uint64) ([]Account
 
 // AddBankAccount sends a request to create a new bank account for a user
 func (c *Client) AddBankAccount(ctx context.Context, bankAccount *BankAccount) (*BankAccount, error) {
-    // Send the AddBankAccount request to the server
     res, err := c.service.AddBankAccount(ctx, &pb.AddBankAccountRequest{
         UserId:          bankAccount.UserID,
         AccountNumber:   bankAccount.AccountNumber,
+        AccountType:     bankAccount.AccountType,     // New field
+        BranchName:      bankAccount.BranchName,      // New field
         BeneficiaryName: bankAccount.BeneficiaryName,
         IfscCode:        bankAccount.IFSCCode,
         BankName:        bankAccount.BankName,
     })
     
     if err != nil {
-        log.Printf("Error adding bank account: %v", err) // Log the error if the RPC fails
+        log.Printf("Error adding bank account: %v", err)
         return nil, err
     }
 
-    // Parse and return the server response as a BankAccount instance
     return &BankAccount{
         UserID:          res.BankAccount.UserId,
         AccountNumber:   res.BankAccount.AccountNumber,
+        AccountType:     res.BankAccount.AccountType,     // New field
+        BranchName:      res.BankAccount.BranchName,      // New field
         BeneficiaryName: res.BankAccount.BeneficiaryName,
         IFSCCode:        res.BankAccount.IfscCode,
         BankName:        res.BankAccount.BankName,
-        CreatedAt:       time.Now(),                    // Set the current time as creation timestamp
-        UpdatedAt:       time.Now(),                    // Set the current time as last updated timestamp
+        CreatedAt:       time.Now(),
+        UpdatedAt:       time.Now(),
     }, nil
 }
 
 // GetBankAccount retrieves bank account details for a specific user
 func (c *Client) GetBankAccount(ctx context.Context, userID string) (*BankAccount, error) {
-    // Send the GetBankAccount request to the server
     res, err := c.service.GetBankAccount(ctx, &pb.GetBankAccountRequest{
         UserId: userID,
     })
     if err != nil {
-        return nil, err // Return error if RPC fails
+        return nil, err
     }
 
-    // Parse and return the server response as a BankAccount instance
     return &BankAccount{
         UserID:          res.BankAccount.UserId,
         AccountNumber:   res.BankAccount.AccountNumber,
+        AccountType:     res.BankAccount.AccountType,     // New field
+        BranchName:      res.BankAccount.BranchName,      // New field
         BeneficiaryName: res.BankAccount.BeneficiaryName,
         IFSCCode:        res.BankAccount.IfscCode,
         BankName:        res.BankAccount.BankName,
@@ -148,28 +150,30 @@ func (c *Client) GetBankAccount(ctx context.Context, userID string) (*BankAccoun
 
 // UpdateBankAccount sends a request to update an existing bank account
 func (c *Client) UpdateBankAccount(ctx context.Context, bankAccount *BankAccount) (*BankAccount, error) {
-    // Send the UpdateBankAccount request to the server
     res, err := c.service.UpdateBankAccount(ctx, &pb.UpdateBankAccountRequest{
         UserId:          bankAccount.UserID,
         AccountNumber:   bankAccount.AccountNumber,
+        AccountType:     bankAccount.AccountType,     // New field
+        BranchName:      bankAccount.BranchName,      // New field
         BeneficiaryName: bankAccount.BeneficiaryName,
         IfscCode:        bankAccount.IFSCCode,
         BankName:        bankAccount.BankName,
     })
     
     if err != nil {
-        log.Printf("Error updating bank account: %v", err) // Log the error if the RPC fails
+        log.Printf("Error updating bank account: %v", err)
         return nil, err
     }
 
-    // Parse and return the updated bank account details
     return &BankAccount{
         UserID:          res.BankAccount.UserId,
         AccountNumber:   res.BankAccount.AccountNumber,
+        AccountType:     res.BankAccount.AccountType,     // New field
+        BranchName:      res.BankAccount.BranchName,      // New field
         BeneficiaryName: res.BankAccount.BeneficiaryName,
         IFSCCode:        res.BankAccount.IfscCode,
         BankName:        res.BankAccount.BankName,
-        UpdatedAt:       time.Now(),                    // Update the last modified timestamp
+        UpdatedAt:       time.Now(),
     }, nil
 }
 

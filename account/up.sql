@@ -16,6 +16,8 @@ DROP TABLE IF EXISTS bank_accounts;
 CREATE TABLE IF NOT EXISTS bank_accounts (
     user_id VARCHAR(36) PRIMARY KEY,
     account_number VARCHAR(50) NOT NULL,
+    account_type VARCHAR(255) NOT NULL,
+    branch_name VARCHAR(255) NOT NULL,
     beneficiary_name VARCHAR(255) NOT NULL,
     ifsc_code VARCHAR(11) NOT NULL,  -- IFSC codes are typically 11 characters
     bank_name VARCHAR(255) NOT NULL,
